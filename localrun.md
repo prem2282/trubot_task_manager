@@ -17,6 +17,16 @@ After the stack is running, open these in your browser:
 | **Mailpit (email inbox)** | http://localhost:8025 |
 | **MongoDB** | Docker on port 27017 — browse with [MongoDB Compass](#explore-mongodb-compass) |
 
+## Production URLs
+
+| Service | URL |
+|---------|-----|
+| **App** | https://trubotai-taskmanager.netlify.app |
+| **API** | https://trubot-task-manager.onrender.com |
+| **Swagger** | https://trubot-task-manager.onrender.com/api-docs |
+
+Deploy details: [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) · full runbook in `internal/PRODUCTION-DEPLOYMENT.md`.
+
 ### Testing email flows locally
 
 1. Register at http://localhost:5173/register

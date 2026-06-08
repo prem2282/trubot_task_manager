@@ -148,7 +148,7 @@ During planning, the following rules were adopted to make multi-tenancy concrete
 | F6 Errors & loading | ✅ | Toasts, form errors, loading states |
 | S1 README & setup | ✅ | README, localrun.md, `dev.sh` |
 | S2 Architecture docs | ✅ | ARCHITECTURE.md, AMBIGUITIES_AND_ASSUMPTIONS.md, code docs |
-| S3 Live demo | ⚠️ | Local demo ready; production deploy is documented but not bundled here |
+| S3 Live demo | ✅ | [trubotai-taskmanager.netlify.app](https://trubotai-taskmanager.netlify.app) · API on Render |
 | S4 Time tracking | ⚠️ | Not included as a separate time log file |
 | Bonus: TypeScript | ✅ | Full stack |
 | Bonus: Tests | ✅ | 156 tests — unit + integration |
@@ -156,7 +156,7 @@ During planning, the following rules were adopted to make multi-tenancy concrete
 | Bonus: CI/CD | ❌ | Not configured |
 | Bonus: Performance | ⚠️ | Pagination, indexes; no advanced tuning |
 
-All **core Part 5 backend and frontend requirements are implemented**. Submission items S3/S4 and some bonus items are partial or deferred.
+All **core Part 5 backend and frontend requirements are implemented**. Production is live on Netlify + Render. Submission item S4 (time log) is still optional/deferred.
 
 ---
 
@@ -203,7 +203,7 @@ The extra scope turns a minimal task CRUD demo into a **multi-tenant team produc
 | **CI/CD pipeline** | Listed as bonus; not configured |
 | **Dockerized API** | ✅ | Same `server/Dockerfile` locally and on Render |
 | **Dockerized MongoDB + Mailpit** | ✅ | `docker-compose.yml` |
-| **Production live demo URL** | Deploy steps documented; no hosted URL in repo |
+| **Production live demo URL** | ✅ | https://trubotai-taskmanager.netlify.app |
 | **Time log file** | Submission guideline; not committed separately |
 | **GraphQL, file upload, microservices** | Discussed in Part 1–2 Q&A only — not part of Part 5 build |
 | **Socket.io integration tests** | Real-time behavior verified manually; not in automated suite |

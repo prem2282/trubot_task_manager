@@ -28,7 +28,12 @@ Logs: `docker compose logs -f server`
 
 ## Render (production)
 
-**Live API:** https://trubot-task-manager.onrender.com
+**Live stack**
+
+| Service | URL |
+|---------|-----|
+| Frontend | https://trubotai-taskmanager.netlify.app |
+| API | https://trubot-task-manager.onrender.com |
 
 | Endpoint | URL |
 |----------|-----|
@@ -36,6 +41,8 @@ Logs: `docker compose logs -f server`
 | Swagger | https://trubot-task-manager.onrender.com/api-docs |
 | REST base | https://trubot-task-manager.onrender.com/api/v1 |
 | Socket.io | https://trubot-task-manager.onrender.com |
+
+Render **`CLIENT_URL`** must be `https://trubotai-taskmanager.netlify.app` (CORS + email links).
 
 ### Option A — Dashboard
 

@@ -2,6 +2,8 @@
 
 Multi-tenant MERN task management app with accounts, workspaces, invitations, email verification, password reset, and real-time updates.
 
+**Live demo:** [https://trubotai-taskmanager.netlify.app](https://trubotai-taskmanager.netlify.app) · API: [health check](https://trubot-task-manager.onrender.com/api/v1/health) · [Swagger](https://trubot-task-manager.onrender.com/api-docs)
+
 For a plain-English walkthrough of features and scope, see [SCOPE.md](./SCOPE.md).
 
 ## Stack
@@ -85,18 +87,18 @@ Merge new email variables into `server/.env` if you already have one from before
 | Database | MongoDB Atlas | — | Managed |
 | Email | [Resend](https://resend.com) | API key on backend | — |
 
-Full backend deploy steps: [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) (Render env vars, health check, Socket.io).
-
-Netlify build env (when you deploy the frontend): `VITE_API_URL=https://trubot-task-manager.onrender.com/api/v1`, `VITE_WS_URL=https://trubot-task-manager.onrender.com`.
+Full deploy runbook: `internal/PRODUCTION-DEPLOYMENT.md` (local only). Summary: [server/DEPLOYMENT.md](./server/DEPLOYMENT.md).
 
 ### Production URLs
 
-| Service | Status | URL |
-|---------|--------|-----|
-| API (Render) | Live | https://trubot-task-manager.onrender.com |
-| Health | Live | https://trubot-task-manager.onrender.com/api/v1/health |
-| Swagger | Live | https://trubot-task-manager.onrender.com/api-docs |
-| Frontend (Netlify) | Not deployed yet | https://trubotai-taskmanager.netlify.app (planned) |
+| Service | URL |
+|---------|-----|
+| **App (Netlify)** | https://trubotai-taskmanager.netlify.app |
+| API (Render) | https://trubot-task-manager.onrender.com |
+| Health | https://trubot-task-manager.onrender.com/api/v1/health |
+| Swagger | https://trubot-task-manager.onrender.com/api-docs |
+
+Netlify build env: `VITE_API_URL=https://trubot-task-manager.onrender.com/api/v1`, `VITE_WS_URL=https://trubot-task-manager.onrender.com`.
 
 Production backend env:
 

@@ -926,9 +926,9 @@ flowchart LR
 
 ## 13. Deployment Architecture
 
-**Backend:** Docker image built from `server/Dockerfile` — runs via `docker compose` locally and on **Render** (Web Service, Docker runtime). Production API: **https://trubot-task-manager.onrender.com** — health check: `GET /api/v1/health`.
+**Backend:** Docker image built from `server/Dockerfile` — runs via `docker compose` locally and on **Render** (Web Service, Docker runtime). Production API: **https://trubot-task-manager.onrender.com**.
 
-**Frontend:** Static SPA on Vercel / Netlify.
+**Frontend:** Static SPA on **Netlify** — **https://trubotai-taskmanager.netlify.app**. Health check: `GET /api/v1/health`.
 
 **Database:** MongoDB Atlas in production; local MongoDB in Docker Compose.
 
