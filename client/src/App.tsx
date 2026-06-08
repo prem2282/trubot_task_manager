@@ -4,6 +4,7 @@ import { useAuthStore } from './store/authStore';
 import { setOnTokenRefreshed } from './services/api';
 import { reconnectSocket } from './services/socket';
 import Toast from './components/Toast';
+import RealtimeTaskNotification from './components/RealtimeTaskNotification';
 import AppLayout from './components/layout/AppLayout';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -42,6 +43,7 @@ export default function App() {
   return (
     <>
       <Toast />
+      <RealtimeTaskNotification />
       <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />

@@ -339,7 +339,7 @@ export async function deleteTask(
   }
 
   await Task.deleteOne({ _id: task._id });
-  return { taskId: task._id.toString(), workspaceId };
+  return { taskId: task._id.toString(), workspaceId, title: task.title };
 }
 
 export async function listWorkspaceUsers(workspaceId: string) {

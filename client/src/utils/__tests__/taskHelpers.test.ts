@@ -50,8 +50,8 @@ describe('normalizeTask', () => {
       title: 'Assigned',
       status: 'todo',
       priority: 'medium',
-      createdBy: { _id: 'user1', name: 'Creator', email: 'a@example.com' } as Task['createdBy'],
-      assignee: { _id: 'user2', name: 'Assignee', email: 'b@example.com' } as Task['assignee'],
+      createdBy: { _id: 'user1', name: 'Creator', email: 'a@example.com' } as unknown as Task['createdBy'],
+      assignee: { _id: 'user2', name: 'Assignee', email: 'b@example.com' } as unknown as Task['assignee'],
       createdAt: '2026-06-01T00:00:00.000Z',
       updatedAt: '2026-06-01T00:00:00.000Z',
     });

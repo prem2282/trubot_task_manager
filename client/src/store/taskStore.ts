@@ -13,22 +13,29 @@ interface TaskState {
     dueDateTo?: string;
   };
   isLoading: boolean;
+  remoteUpdatedTaskIds: string[];
   fetchTasks: (options?: { append?: boolean }) => Promise<void>;
   loadMoreTasks: () => Promise<void>;
   setFilters: (filters: TaskState['filters']) => void;
   clearFilters: () => Promise<void>;
   upsertTask: (task: Task) => void;
   removeTask: (taskId: string) => void;
+  markRemoteUpdate: (taskId: string) => void;
+  clearRemoteUpdate: (taskId: string) => void;
   clearTasks: () => void;
 }
 
 const TASK_LIMIT = 20;
+const REMOTE_HIGHLIGHT_MS = 20000;
+
+const remoteHighlightTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export const useTaskStore = create<TaskState>((set, get) => ({
   tasks: [],
   meta: null,
   filters: {},
   isLoading: false,
+  remoteUpdatedTaskIds: [],
 
   fetchTasks: async (options) => {
     const append = options?.append ?? false;
@@ -81,7 +88,44 @@ export const useTaskStore = create<TaskState>((set, get) => ({
     }),
 
   removeTask: (taskId) =>
-    set((state) => ({ tasks: state.tasks.filter((t) => t._id !== taskId) })),
+    set((state) => {
+      get().clearRemoteUpdate(taskId);
+      return { tasks: state.tasks.filter((t) => t._id !== taskId) };
+    }),
 
-  clearTasks: () => set({ tasks: [], meta: null }),
+  markRemoteUpdate: (taskId) => {
+    set((state) => ({
+      remoteUpdatedTaskIds: state.remoteUpdatedTaskIds.includes(taskId)
+        ? state.remoteUpdatedTaskIds
+        : [...state.remoteUpdatedTaskIds, taskId],
+    }));
+
+    const existing = remoteHighlightTimers.get(taskId);
+    if (existing) clearTimeout(existing);
+
+    remoteHighlightTimers.set(
+      taskId,
+      setTimeout(() => {
+        get().clearRemoteUpdate(taskId);
+        remoteHighlightTimers.delete(taskId);
+      }, REMOTE_HIGHLIGHT_MS)
+    );
+  },
+
+  clearRemoteUpdate: (taskId) => {
+    const existing = remoteHighlightTimers.get(taskId);
+    if (existing) {
+      clearTimeout(existing);
+      remoteHighlightTimers.delete(taskId);
+    }
+    set((state) => ({
+      remoteUpdatedTaskIds: state.remoteUpdatedTaskIds.filter((id) => id !== taskId),
+    }));
+  },
+
+  clearTasks: () => {
+    remoteHighlightTimers.forEach((timer) => clearTimeout(timer));
+    remoteHighlightTimers.clear();
+    set({ tasks: [], meta: null, remoteUpdatedTaskIds: [] });
+  },
 }));

@@ -78,6 +78,7 @@ function renderDashboard(role: Parameters<typeof authStateForRole>[0], tasks: Ta
     meta: null,
     filters: {},
     isLoading: false,
+    remoteUpdatedTaskIds: [],
   });
 
   render(

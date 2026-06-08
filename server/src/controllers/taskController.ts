@@ -47,7 +47,10 @@ export async function createTask(req: Request, res: Response, next: NextFunction
       req.body
     );
     const serialized = serializeTask(task);
-    getIO()?.to(`workspace:${req.user!.workspaceId}`).emit('task:created', { task: serialized });
+    getIO()?.to(`workspace:${req.user!.workspaceId}`).emit('task:created', {
+      task: serialized,
+      actorUserId: req.user!.userId,
+    });
     res.status(201).json({ success: true, data: serialized });
   } catch (e) {
     next(e);
@@ -65,7 +68,10 @@ export async function updateTask(req: Request, res: Response, next: NextFunction
       req.body
     );
     const serialized = serializeTask(task);
-    getIO()?.to(`workspace:${req.user!.workspaceId}`).emit('task:updated', { task: serialized });
+    getIO()?.to(`workspace:${req.user!.workspaceId}`).emit('task:updated', {
+      task: serialized,
+      actorUserId: req.user!.userId,
+    });
     res.json({ success: true, data: serialized });
   } catch (e) {
     next(e);
@@ -81,7 +87,10 @@ export async function deleteTask(req: Request, res: Response, next: NextFunction
       req.user!.accountRole,
       req.user!.workspaceRole
     );
-    getIO()?.to(`workspace:${req.user!.workspaceId}`).emit('task:deleted', result);
+    getIO()?.to(`workspace:${req.user!.workspaceId}`).emit('task:deleted', {
+      ...result,
+      actorUserId: req.user!.userId,
+    });
     res.json({ success: true, data: result });
   } catch (e) {
     next(e);
@@ -99,7 +108,10 @@ export async function addComment(req: Request, res: Response, next: NextFunction
       req.body
     );
     const serialized = serializeTask(task);
-    getIO()?.to(`workspace:${req.user!.workspaceId}`).emit('task:updated', { task: serialized });
+    getIO()?.to(`workspace:${req.user!.workspaceId}`).emit('task:updated', {
+      task: serialized,
+      actorUserId: req.user!.userId,
+    });
     res.status(201).json({ success: true, data: serialized });
   } catch (e) {
     next(e);

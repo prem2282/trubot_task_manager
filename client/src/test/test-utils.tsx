@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useTaskStore } from '../store/taskStore';
 import { useToastStore } from '../store/toastStore';
+import { useRealtimeNotificationStore } from '../store/realtimeNotificationStore';
 import {
   mockAccount,
   mockMemberships,
@@ -90,6 +91,8 @@ export function resetStores() {
     meta: null,
     filters: {},
     isLoading: false,
+    remoteUpdatedTaskIds: [],
   });
   useToastStore.setState?.({ message: null });
+  useRealtimeNotificationStore.setState?.({ message: null });
 }

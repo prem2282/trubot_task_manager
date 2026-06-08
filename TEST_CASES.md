@@ -2,13 +2,13 @@
 
 One-line summary of every automated test. Use this to see what is covered without opening the test source files.
 
-**166 tests total** — 55 client unit · 88 server unit · 23 server integration
+**171 tests total** — 60 client unit · 88 server unit · 23 server integration
 
 Run everything: `./test.sh all`
 
 ---
 
-## Client unit tests (55)
+## Client unit tests (60)
 
 ### `AppLayout`
 
@@ -105,6 +105,20 @@ Run everything: `./test.sh all`
 - **canViewTask:** Denies unrelated workspace members.
 - **canViewTask:** Allows admins to view any task.
 - **normalizeTask:** Adds id on mongoose-shaped assignee refs from socket payloads.
+
+### `RealtimeTaskNotification`
+
+- Renders nothing when there is no message.
+- Renders a bottom-right realtime message from the store.
+
+### `realtimeTaskMessages`
+
+- **realtimeTaskMessage:** Formats created, updated, and deleted messages with the task title.
+
+### `taskStore` — remote updates
+
+- **markRemoteUpdate:** Marks and clears remote update highlights.
+- **markRemoteUpdate:** Auto-clears remote update highlights after a timeout.
 
 ---
 

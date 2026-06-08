@@ -4,6 +4,7 @@ import { connectSocket, getSocket } from '../services/socket';
 import { useAuthStore, isWorkspaceAdmin } from '../store/authStore';
 import { useTaskStore } from '../store/taskStore';
 import { useToastStore } from '../store/toastStore';
+import { useRealtimeNotificationStore } from '../store/realtimeNotificationStore';
 import { Task, TaskStatus, User } from '../types';
 import TaskModal from '../components/TaskModal';
 import { FieldLabel } from '../components/InfoTip';
@@ -17,6 +18,7 @@ import {
   statusChipClass,
   statusLabel,
 } from '../utils/taskHelpers';
+import { realtimeTaskMessage } from '../utils/realtimeTaskMessages';
 
 function getUserName(value: User | string | Record<string, unknown>): string {
   if (typeof value === 'string') return value;
@@ -37,6 +39,20 @@ function getTaskActions(
   return { canOpen, canDelete, openLabel };
 }
 
+function taskHighlightClass(isHighlighted: boolean, baseClass: string) {
+  return isHighlighted
+    ? `${baseClass} border-l-4 border-l-amber-400 bg-amber-50/50`
+    : baseClass;
+}
+
+function RemoteUpdateBadge() {
+  return (
+    <span className="inline-flex shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+      Updated
+    </span>
+  );
+}
+
 export default function DashboardPage() {
   const currentUserId = useAuthStore((s) => s.user?.id ?? '');
   const account = useAuthStore((s) => s.account);
@@ -44,8 +60,22 @@ export default function DashboardPage() {
   const memberships = useAuthStore((s) => s.memberships);
   const isAdmin = isWorkspaceAdmin(memberships, account?.id, workspace?.id);
   const showToast = useToastStore((s) => s.showToast);
-  const { tasks, filters, meta, isLoading, fetchTasks, loadMoreTasks, setFilters, clearFilters, upsertTask, removeTask } =
-    useTaskStore();
+  const showRealtimeNotification = useRealtimeNotificationStore((s) => s.showRealtimeNotification);
+  const {
+    tasks,
+    filters,
+    meta,
+    isLoading,
+    remoteUpdatedTaskIds,
+    fetchTasks,
+    loadMoreTasks,
+    setFilters,
+    clearFilters,
+    upsertTask,
+    removeTask,
+    markRemoteUpdate,
+    clearRemoteUpdate,
+  } = useTaskStore();
   const [users, setUsers] = useState<User[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -60,23 +90,65 @@ export default function DashboardPage() {
     const socket = getSocket();
     if (!socket) return;
 
-    const handleCreated = ({ task }: { task: Task }) => {
-      const normalized = normalizeTask(task);
-      if (canViewTask(normalized, currentUserId, isAdmin)) {
-        upsertTask(normalized);
+    const notifyRemoteChange = (
+      type: 'created' | 'updated' | 'deleted',
+      taskTitle: string,
+      taskId?: string
+    ) => {
+      showRealtimeNotification(realtimeTaskMessage(type, taskTitle));
+      if (taskId && type !== 'deleted') {
+        markRemoteUpdate(taskId);
       }
     };
 
-    const handleUpdated = ({ task }: { task: Task }) => {
+    const handleCreated = ({
+      task,
+      actorUserId,
+    }: {
+      task: Task;
+      actorUserId?: string;
+    }) => {
+      const normalized = normalizeTask(task);
+      if (!canViewTask(normalized, currentUserId, isAdmin)) return;
+      upsertTask(normalized);
+      if (actorUserId && actorUserId !== currentUserId) {
+        notifyRemoteChange('created', normalized.title, normalized._id);
+      }
+    };
+
+    const handleUpdated = ({
+      task,
+      actorUserId,
+    }: {
+      task: Task;
+      actorUserId?: string;
+    }) => {
       const normalized = normalizeTask(task);
       if (canViewTask(normalized, currentUserId, isAdmin)) {
         upsertTask(normalized);
+        if (actorUserId && actorUserId !== currentUserId) {
+          notifyRemoteChange('updated', normalized.title, normalized._id);
+        }
       } else {
         removeTask(normalized._id);
       }
     };
 
-    const handleDeleted = ({ taskId }: { taskId: string }) => removeTask(taskId);
+    const handleDeleted = ({
+      taskId,
+      title,
+      actorUserId,
+    }: {
+      taskId: string;
+      title?: string;
+      actorUserId?: string;
+    }) => {
+      if (actorUserId && actorUserId !== currentUserId) {
+        const existing = useTaskStore.getState().tasks.find((t) => t._id === taskId);
+        notifyRemoteChange('deleted', title ?? existing?.title ?? 'Task');
+      }
+      removeTask(taskId);
+    };
 
     socket.on('task:created', handleCreated);
     socket.on('task:updated', handleUpdated);
@@ -87,7 +159,7 @@ export default function DashboardPage() {
       socket.off('task:updated', handleUpdated);
       socket.off('task:deleted', handleDeleted);
     };
-  }, [currentUserId, isAdmin, upsertTask, removeTask, workspace?.id]);
+  }, [currentUserId, isAdmin, upsertTask, removeTask, markRemoteUpdate, showRealtimeNotification, workspace?.id]);
 
   const applyFilters = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -102,6 +174,7 @@ export default function DashboardPage() {
   };
 
   const openTask = async (task: Task) => {
+    clearRemoteUpdate(task._id);
     const { data } = await api.get(`/tasks/${task._id}`);
     setEditingTask(data.data);
     setModalOpen(true);
@@ -231,13 +304,20 @@ export default function DashboardPage() {
             {tasks.map((task) => {
               const dueUrgency = getDueDateUrgency(task.dueDate, task.status);
               const { canOpen, canDelete, openLabel } = getTaskActions(task, currentUserId, isAdmin);
+              const isHighlighted = remoteUpdatedTaskIds.includes(task._id);
               return (
                 <article
                   key={task._id}
-                  className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                  className={taskHighlightClass(
+                    isHighlighted,
+                    'rounded-lg border border-slate-200 bg-white p-4 shadow-sm'
+                  )}
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
-                    <h2 className="font-medium leading-snug">{task.title}</h2>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <h2 className="font-medium leading-snug">{task.title}</h2>
+                      {isHighlighted && <RemoteUpdateBadge />}
+                    </div>
                     <span
                       className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${statusChipClass(task.status)}`}
                     >
@@ -305,9 +385,18 @@ export default function DashboardPage() {
               {tasks.map((task) => {
                 const dueUrgency = getDueDateUrgency(task.dueDate, task.status);
                 const { canOpen, canDelete, openLabel } = getTaskActions(task, currentUserId, isAdmin);
+                const isHighlighted = remoteUpdatedTaskIds.includes(task._id);
                 return (
-                  <tr key={task._id} className="border-t border-slate-100">
-                    <td className="px-4 py-3 font-medium">{task.title}</td>
+                  <tr
+                    key={task._id}
+                    className={taskHighlightClass(isHighlighted, 'border-t border-slate-100')}
+                  >
+                    <td className="px-4 py-3 font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{task.title}</span>
+                        {isHighlighted && <RemoteUpdateBadge />}
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${statusChipClass(task.status)}`}

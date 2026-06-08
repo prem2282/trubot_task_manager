@@ -105,13 +105,18 @@ Full-screen views in `client/src/pages/`. Each page corresponds to a route.
 - `fetchTasks()` (sorted by due date ascending)
 - Load users for assignee filter (`GET /users`)
 - Connect socket and subscribe to:
-  - `task:created` → `upsertTask`
-  - `task:updated` → `upsertTask`
-  - `task:deleted` → `removeTask`
+  - `task:created` → `upsertTask` + remote notification/highlight when `actorUserId` is another user
+  - `task:updated` → `upsertTask` + notification/highlight for other users’ edits
+  - `task:deleted` → `removeTask` + notification for other users’ deletes
+
+**Real-time feedback:**
+
+- Bottom-right notification (~4s): `New task: …`, `Task updated: …`, `Task deleted: …` (other users only)
+- Amber **Updated** badge + row highlight until the task is opened or ~20s
+
+**Open task:** Clears the remote **Updated** highlight, fetches full task via `GET /tasks/:id`, then opens the modal.
 
 **Delete:** Confirms with browser dialog, then `DELETE /tasks/:id`, toast on success.
-
-**Open task:** Fetches full task via `GET /tasks/:id` before opening modal (ensures comments and permissions are current).
 
 ---
 
