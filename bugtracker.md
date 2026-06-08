@@ -1,6 +1,6 @@
 # Bug tracker
 
-Issues found while running or testing the project. Each bug has its own file in [`bugs/`](./bugs/).
+Issues found while running or testing the project. Each bug has its own file in [`bugs/`](./bugs/). **When you report a new bug, add a `BUG-00X` file under `bugs/` and a row in the table below.**
 
 | ID | Status | Summary | Found | File |
 |----|--------|---------|-------|------|
@@ -9,5 +9,6 @@ Issues found while running or testing the project. Each bug has its own file in 
 | BUG-003 | Fixed | Register shows generic validation error, no field details | 2026-06-07 | [BUG-003](./bugs/BUG-003-register-validation-errors-not-shown.md) |
 | BUG-004 | Fixed | Password reset: no email in real inbox (local Mailpit) | 2026-06-08 | [BUG-004](./bugs/BUG-004-password-reset-no-email-local-mailpit.md) |
 | BUG-005 | Fixed | Page refresh logs user out (session not persisted) | 2026-06-08 | [BUG-005](./bugs/BUG-005-session-lost-on-page-refresh.md) |
+| BUG-006 | Fixed | Tab stops on info icons instead of next input | 2026-06-08 | [BUG-006](./bugs/BUG-006-infotip-tab-stops-form-flow.md) |
 
 **Status values:** Open · In progress · Fixed · Won't fix

@@ -72,7 +72,7 @@ Reusable UI pieces in `client/src/components/`.
 **Touch behavior:** Click toggles tooltip (`aria-expanded`); avoids clipped hover-only tooltips on mobile.
 
 **Exports:**
-- `InfoTip({ text })` — standalone icon + tooltip
+- `InfoTip({ text })` — standalone icon + tooltip (not in Tab order; hover or click to read)
 - `FieldLabel({ label, tip?, className? })` — label row with optional tip
 
 **Used on:** TaskBoard filters, TaskModal, Register, Team, Workspaces, and other forms.

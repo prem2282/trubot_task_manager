@@ -6,28 +6,26 @@ For a plain-English walkthrough of features and scope, see [SCOPE.md](./SCOPE.md
 
 ## Stack
 
-- **Backend:** Node.js, Express, TypeScript, Mongoose, Socket.io, JWT, Nodemailer
-- **Frontend:** React, Vite, TypeScript, Tailwind CSS, Zustand
-- **Database:** MongoDB (Atlas or local via Docker)
+- **Backend:** Node.js, Express, TypeScript, Mongoose, Socket.io, JWT, Nodemailer (runs in **Docker** locally and on Render)
+- **Frontend:** React, Vite, TypeScript, Tailwind CSS, Zustand (runs on host in dev)
+- **Database:** MongoDB (Atlas in production; local via Docker)
 - **Email (local):** Mailpit via Docker
 - **Email (production):** Resend (free tier)
 
 ## Project structure
 
 ```
-├── server/          # Express API + Socket.io
-├── client/          # React SPA
-├── ARCHITECTURE.md
-├── AMBIGUITIES_AND_ASSUMPTIONS.md
-├── docker-compose.yml   # MongoDB + Mailpit
-├── dev.sh               # One-command local stack
+├── server/          # Express API + Socket.io + Dockerfile
+├── client/          # React SPA (host dev server)
+├── docker-compose.yml   # MongoDB, Mailpit, API container
+├── dev.sh               # Docker stack + UI
 └── test.sh              # Unit + integration test runner
 ```
 
 ## Prerequisites
 
-- **Node.js 20+** (recommended) — use `nvm use`
-- MongoDB + Mailpit via Docker (Colima or Docker Desktop)
+- **Node.js 20+** — for the React UI and tests (`nvm use`)
+- **Docker** — MongoDB, Mailpit, and the API container (Colima or Docker Desktop)
 
 ## Local setup
 
@@ -80,12 +78,14 @@ Merge new email variables into `server/.env` if you already have one from before
 
 ## Deployment (separate services, one repo)
 
-| Service | Platform | Root directory |
-|---------|----------|----------------|
-| Backend | Render / Railway | `server/` |
-| Frontend | Vercel / Netlify | `client/` |
-| Database | MongoDB Atlas | — |
-| Email | [Resend](https://resend.com) | API key on backend |
+| Service | Platform | Root directory | Runtime |
+|---------|----------|----------------|---------|
+| Backend | Render | `server/` | **Docker** (`server/Dockerfile`) |
+| Frontend | Vercel / Netlify | `client/` | Static build |
+| Database | MongoDB Atlas | — | Managed |
+| Email | [Resend](https://resend.com) | API key on backend | — |
+
+Full backend deploy steps: [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) (Render env vars, health check, Socket.io).
 
 Production backend env:
 
@@ -183,6 +183,7 @@ More detail: [TEST_CASES.md](./TEST_CASES.md) (one-line index of all 156 tests) 
 ## Documentation
 
 - [SCOPE.md](./SCOPE.md) — product features, user journey, assignment vs built scope
+- [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) — Docker local stack + Render production
 - [TEST_CASES.md](./TEST_CASES.md) — one-line index of every test case
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — system design (v2.4)
 - [AMBIGUITIES_AND_ASSUMPTIONS.md](./AMBIGUITIES_AND_ASSUMPTIONS.md) — scope decisions

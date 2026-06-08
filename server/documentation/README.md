@@ -27,6 +27,10 @@ Each file below mirrors a folder or layer in the codebase. For every **function*
 | [08-routes-and-sockets.md](./08-routes-and-sockets.md) | API routes and real-time events |
 | [09-email-and-verification.md](./09-email-and-verification.md) | Email service, verification, password reset |
 
+## Deployment
+
+Local and production API runs in Docker. See [DEPLOYMENT.md](../DEPLOYMENT.md).
+
 ## Request flow (high level)
 
 ```

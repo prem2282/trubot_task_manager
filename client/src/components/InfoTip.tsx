@@ -11,6 +11,7 @@ export function InfoTip({ text }: InfoTipProps) {
     <span className="group/info relative ml-1 inline-flex align-middle">
       <button
         type="button"
+        tabIndex={-1}
         aria-label="More information"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}

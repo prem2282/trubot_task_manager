@@ -81,7 +81,7 @@
 
 **Side effects:** Logs `"MongoDB connected"` to the console.
 
-**Uses:** `env.MONGODB_URI` from config.
+**Uses:** `env.MONGODB_URI` from config. In Docker Compose, `MONGODB_URI` is set to `mongodb://mongo:27017/task-manager?replicaSet=rs0`.
 
 ---
 

@@ -152,7 +152,7 @@ During planning, the following rules were adopted to make multi-tenancy concrete
 | S4 Time tracking | ⚠️ | Not included as a separate time log file |
 | Bonus: TypeScript | ✅ | Full stack |
 | Bonus: Tests | ✅ | 156 tests — unit + integration |
-| Bonus: Docker | ⚠️ | MongoDB + Mailpit via `docker-compose.yml`; app runs on host Node |
+| Bonus: Docker | ✅ | API in Docker (`server/Dockerfile`); MongoDB + Mailpit via `docker-compose.yml`; UI on host in dev |
 | Bonus: CI/CD | ❌ | Not configured |
 | Bonus: Performance | ⚠️ | Pagination, indexes; no advanced tuning |
 
@@ -189,7 +189,7 @@ Part 5 describes a **single-team task app**. The project builds a **small SaaS-s
 | **156 automated tests** | Bonus only | Assignment bonus; protects regressions on roles and invites |
 | **TEST_CASES.md, server/client code docs** | Extra docs | Plain-language and module-level documentation |
 | **Filled Swagger spec (26 routes)** | B7 requires docs | Full API reference at `/api-docs` |
-| **`dev.sh` one-command local stack** | No | Single command to start MongoDB, Mailpit, API, and UI |
+| **`dev.sh` one-command local stack** | No | Docker stack + UI; see [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) |
 
 The extra scope turns a minimal task CRUD demo into a **multi-tenant team product** that implements the assignment’s architecture and security topics in code, while keeping the required task dashboard and real-time updates at the center.
 
@@ -201,7 +201,8 @@ The extra scope turns a minimal task CRUD demo into a **multi-tenant team produc
 |------|-------|
 | **Automated invite email** | Resolved to manual link share; auth emails (verify/reset) are sent |
 | **CI/CD pipeline** | Listed as bonus; not configured |
-| **Dockerized app containers** | Only MongoDB + Mailpit in Docker; Node apps run locally |
+| **Dockerized API** | ✅ | Same `server/Dockerfile` locally and on Render |
+| **Dockerized MongoDB + Mailpit** | ✅ | `docker-compose.yml` |
 | **Production live demo URL** | Deploy steps documented; no hosted URL in repo |
 | **Time log file** | Submission guideline; not committed separately |
 | **GraphQL, file upload, microservices** | Discussed in Part 1–2 Q&A only — not part of Part 5 build |
@@ -252,7 +253,8 @@ Health · Authentication · Workspaces · Tasks · Invites · Members · Users �
 | Document | Purpose |
 |----------|---------|
 | [README.md](./README.md) | Setup, env vars, scripts |
-| [localrun.md](./localrun.md) | Ports, Mailpit, troubleshooting |
+| [localrun.md](./localrun.md) | Ports, Docker stack, Compass, troubleshooting |
+| [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) | API Docker image, Render deploy |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, data model, diagrams |
 | [AMBIGUITIES_AND_ASSUMPTIONS.md](./AMBIGUITIES_AND_ASSUMPTIONS.md) | Scope decisions and rationale |
 | [TEST_CASES.md](./TEST_CASES.md) | One-line list of all 156 tests |

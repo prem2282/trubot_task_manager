@@ -8,7 +8,7 @@ services:
       - mongo_data:/data/db
     command: ["--replSet", "rs0", "--bind_ip_all"]
     healthcheck:
-      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }" | mongosh --quiet
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'mongo:27017'}]}) }" | mongosh --quiet
       interval: 5s
       timeout: 10s
       retries: 10
@@ -23,6 +23,29 @@ services:
     environment:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: task-manager-api
+    ports:
+      - "${SERVER_PORT:-5000}:5000"
+    env_file:
+      - ./server/.env
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      MONGODB_URI: mongodb://mongo:27017/task-manager?replicaSet=rs0
+      SMTP_HOST: mailpit
+      SMTP_PORT: 1025
+      SMTP_SECURE: "false"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    restart: unless-stopped
 
 volumes:
   mongo_data:

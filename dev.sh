@@ -3,9 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEV_DIR="$ROOT_DIR/.dev"
-SERVER_PID="$DEV_DIR/server.pid"
 CLIENT_PID="$DEV_DIR/client.pid"
-SERVER_LOG="$DEV_DIR/server.log"
 CLIENT_LOG="$DEV_DIR/client.log"
 
 SERVER_PORT="${SERVER_PORT:-5000}"
@@ -16,11 +14,11 @@ usage() {
 Usage: ./dev.sh <command>
 
 Commands:
-  start    Start Colima (if needed), MongoDB, API, and UI
-  stop     Stop API, UI, and MongoDB containers
+  start    Start Colima (if needed), Docker stack (MongoDB, Mailpit, API), and UI
+  stop     Stop UI and Docker stack
   restart  stop then start
   status   Show running services
-  logs     Tail API and UI logs (Ctrl+C to exit)
+  logs     Tail UI and API logs (Ctrl+C to exit)
 
 Examples:
   ./dev.sh start
@@ -92,24 +90,41 @@ start_docker_runtime() {
   fi
 }
 
-start_mongo() {
-  log "Starting MongoDB..."
+start_docker_stack() {
+  log "Starting Docker stack (MongoDB, Mailpit, API)..."
   cd "$ROOT_DIR"
-  docker compose up -d
+  docker compose up -d --build
 
   log "Waiting for MongoDB replica set (~20s)..."
   local retries=30
   while [ "$retries" -gt 0 ]; do
     if docker compose exec -T mongo mongosh --quiet --eval "rs.status().ok" 2>/dev/null | grep -q '^1$'; then
       log "MongoDB is ready."
+      break
+    fi
+    sleep 2
+    retries=$((retries - 1))
+  done
+
+  if [ "$retries" -le 0 ]; then
+    log "Error: MongoDB did not become ready in time."
+    log "Check logs: docker compose logs mongo"
+    exit 1
+  fi
+
+  log "Waiting for API on http://localhost:$SERVER_PORT ..."
+  retries=30
+  while [ "$retries" -gt 0 ]; do
+    if curl -sf "http://localhost:$SERVER_PORT/api/v1/health" >/dev/null 2>&1; then
+      log "API is ready."
       return 0
     fi
     sleep 2
     retries=$((retries - 1))
   done
 
-  log "Error: MongoDB did not become ready in time."
-  log "Check logs: docker compose logs mongo"
+  log "Error: API did not become ready in time."
+  log "Check logs: docker compose logs server"
   exit 1
 }
 
@@ -126,11 +141,6 @@ ensure_env_files() {
 }
 
 ensure_dependencies() {
-  if [ ! -d "$ROOT_DIR/server/node_modules" ]; then
-    log "Installing server dependencies..."
-    npm install --prefix "$ROOT_DIR/server"
-  fi
-
   if [ ! -d "$ROOT_DIR/client/node_modules" ]; then
     log "Installing client dependencies..."
     npm install --prefix "$ROOT_DIR/client"
@@ -178,33 +188,19 @@ kill_port() {
   local pids
   pids="$(lsof -ti ":$port" 2>/dev/null || true)"
   if [ -n "$pids" ]; then
+    log "Freeing port $port (stopping stale process PID(s): $pids)..."
     kill $pids 2>/dev/null || true
+    sleep 1
+    pids="$(lsof -ti ":$port" 2>/dev/null || true)"
+    if [ -n "$pids" ]; then
+      kill -9 $pids 2>/dev/null || true
+      sleep 1
+    fi
   fi
 }
 
-start_server() {
-  if [ -f "$SERVER_PID" ] && is_pid_running "$(cat "$SERVER_PID")"; then
-    log "API already running (PID $(cat "$SERVER_PID"))."
-    return 0
-  fi
-
-  rm -f "$SERVER_PID"
-  : >"$SERVER_LOG"
-
-  log "Starting API on http://localhost:$SERVER_PORT ..."
-  (
-    cd "$ROOT_DIR/server"
-    nohup npm run dev >>"$SERVER_LOG" 2>&1 &
-    echo $! >"$SERVER_PID"
-  )
-
-  sleep 2
-  if ! is_pid_running "$(cat "$SERVER_PID")"; then
-    log "Error: API failed to start. See $SERVER_LOG"
-    exit 1
-  fi
-
-  log "API started (PID $(cat "$SERVER_PID"))."
+ensure_api_port_free() {
+  kill_port "$SERVER_PORT"
 }
 
 start_client() {
@@ -239,16 +235,17 @@ cmd_start() {
   ensure_dev_dir
   ensure_node_version
   start_docker_runtime
-  start_mongo
   ensure_env_files
+  ensure_api_port_free
+  start_docker_stack
   ensure_dependencies
-  start_server
   start_client
 
   log ""
   log "All services started."
   log "  App:     http://localhost:$CLIENT_PORT"
-  log "  API:     http://localhost:$SERVER_PORT"
+  log "  API:     Docker container (http://localhost:$SERVER_PORT)"
+  log "  Rebuild API after server changes: docker compose up -d --build server"
   log "  Swagger: http://localhost:$SERVER_PORT/api-docs"
   log "  Mailpit: http://localhost:8025 (local emails)"
   log "  Logs:    ./dev.sh logs"
@@ -258,17 +255,16 @@ cmd_start() {
 cmd_stop() {
   log "Stopping local stack..."
   stop_pid_file "$CLIENT_PID" "UI"
-  stop_pid_file "$SERVER_PID" "API"
   kill_port "$CLIENT_PORT"
-  kill_port "$SERVER_PORT"
 
   cd "$ROOT_DIR"
-  if docker compose ps -q mongo 2>/dev/null | grep -q .; then
-    log "Stopping MongoDB containers..."
+  if docker compose ps -q 2>/dev/null | grep -q .; then
+    log "Stopping Docker stack (API, MongoDB, Mailpit)..."
     docker compose down
   fi
+  ensure_api_port_free
 
-  log "Stopped API, UI, and MongoDB."
+  log "Stopped UI and Docker stack."
   log "Colima/Docker Desktop was left running (shared with other projects)."
 }
 
@@ -291,16 +287,22 @@ cmd_status() {
   fi
 
   cd "$ROOT_DIR"
+  if docker compose ps -q server 2>/dev/null | grep -q .; then
+    log "  API: running in Docker ($(docker compose ps --format '{{.Status}}' server 2>/dev/null || echo 'up'), port $SERVER_PORT)"
+  else
+    log "  API: stopped"
+  fi
+
   if docker compose ps -q mongo 2>/dev/null | grep -q .; then
     log "  MongoDB: running ($(docker compose ps --format '{{.Status}}' mongo 2>/dev/null || echo 'up'))"
   else
     log "  MongoDB: stopped"
   fi
 
-  if [ -f "$SERVER_PID" ] && is_pid_running "$(cat "$SERVER_PID")"; then
-    log "  API: running (PID $(cat "$SERVER_PID"), port $SERVER_PORT)"
+  if docker compose ps -q mailpit 2>/dev/null | grep -q .; then
+    log "  Mailpit: running (http://localhost:8025)"
   else
-    log "  API: stopped"
+    log "  Mailpit: stopped"
   fi
 
   if [ -f "$CLIENT_PID" ] && is_pid_running "$(cat "$CLIENT_PID")"; then
@@ -318,8 +320,18 @@ cmd_status() {
 
 cmd_logs() {
   ensure_dev_dir
-  touch "$SERVER_LOG" "$CLIENT_LOG"
-  tail -f "$SERVER_LOG" "$CLIENT_LOG"
+  touch "$CLIENT_LOG"
+
+  if docker compose ps -q server 2>/dev/null | grep -q .; then
+    tail -f "$CLIENT_LOG" &
+    local client_tail_pid=$!
+    trap 'kill "$client_tail_pid" 2>/dev/null || true' INT TERM
+    docker compose logs -f server
+    kill "$client_tail_pid" 2>/dev/null || true
+  else
+    log "API container is not running. Showing UI log only."
+    tail -f "$CLIENT_LOG"
+  fi
 }
 
 main() {

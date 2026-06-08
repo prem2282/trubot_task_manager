@@ -19,6 +19,15 @@ describe('InfoTip', () => {
     );
   });
 
+  it('is excluded from the tab order so form fields stay sequential', () => {
+    render(<InfoTip text="Skipped when tabbing" />);
+
+    expect(screen.getByRole('button', { name: 'More information' })).toHaveAttribute(
+      'tabIndex',
+      '-1'
+    );
+  });
+
   it('hides tooltip when clicked again', async () => {
     const user = userEvent.setup();
     render(<InfoTip text="Toggle me" />);

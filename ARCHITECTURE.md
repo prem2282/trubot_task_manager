@@ -531,7 +531,7 @@ sequenceDiagram
 
 | Environment | Provider | Config |
 |-------------|----------|--------|
-| Local dev | Mailpit (Docker) | `EMAIL_PROVIDER=smtp`, `SMTP_HOST=localhost`, `SMTP_PORT=1025` |
+| Local dev | Mailpit (Docker) | API container: `SMTP_HOST=mailpit`; host-only tools: `localhost:1025` |
 | Production | Resend | `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, verified `EMAIL_FROM` |
 
 ### 6.6 Multi-Account Context
@@ -926,7 +926,15 @@ flowchart LR
 
 ## 13. Deployment Architecture
 
-Unchanged from v1 — Render (API + Socket.io) + Vercel (SPA) + MongoDB Atlas.
+**Backend:** Docker image built from `server/Dockerfile` — runs via `docker compose` locally and on **Render** (Web Service, Docker runtime). Health check: `GET /api/v1/health`.
+
+**Frontend:** Static SPA on Vercel / Netlify.
+
+**Database:** MongoDB Atlas in production; local MongoDB in Docker Compose.
+
+**Email:** Resend in production; Mailpit in local Docker stack.
+
+See [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) for env vars, Render setup, and rebuild commands.
 
 Additional env vars:
 
