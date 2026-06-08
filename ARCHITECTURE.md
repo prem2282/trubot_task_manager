@@ -114,6 +114,71 @@ flowchart TB
 
 **Real-time flow:** Task mutation in Service → persist to DB → emit to `workspace:{workspaceId}` room → connected clients in that workspace update local state
 
+### 3.2 Production Infrastructure
+
+Live deployment (June 2026). Source code on **GitHub**; push to `main` triggers **GitHub Actions** (lint + tests), then auto-deploys to **Netlify** (frontend) and **Render** (backend).
+
+```mermaid
+flowchart TB
+    subgraph UserLayer["End users"]
+        Browser[Web browser]
+    end
+
+    subgraph Source["Source control and CI"]
+        GH[GitHub repo]
+        CI[GitHub Actions CI]
+    end
+
+    subgraph NetlifyHost["Netlify — frontend"]
+        SPA["React SPA static build<br/>trubotai-taskmanager.netlify.app"]
+    end
+
+    subgraph RenderHost["Render — backend Docker"]
+        API["Express REST API<br/>trubot-task-manager.onrender.com"]
+        SIO[Socket.io real-time]
+    end
+
+    subgraph DataLayer["MongoDB Atlas"]
+        AtlasDB[(task-manager database)]
+    end
+
+    subgraph EmailLayer["Resend — transactional email"]
+        ResendAPI[Resend API]
+        Inbox[User inbox]
+    end
+
+    GH -->|push main| CI
+    GH -->|auto deploy| SPA
+    GH -->|auto deploy| API
+
+    Browser -->|HTTPS UI| SPA
+    Browser -->|HTTPS REST + httpOnly refresh cookie| API
+    Browser -->|WSS task events| SIO
+
+    API --> SIO
+    API -->|Mongoose TLS| AtlasDB
+    SIO -->|read write tasks| AtlasDB
+
+    API -->|verification invite reset emails| ResendAPI
+    ResendAPI --> Inbox
+    Inbox -->|email links back to Netlify routes| Browser
+
+    SPA -.->|VITE_API_URL VITE_WS_URL| API
+    API -.->|CLIENT_URL CORS cookie domain| SPA
+```
+
+| Component | Platform | Role |
+|-----------|----------|------|
+| **Frontend** | Netlify | Vite build of `client/`; SPA routing via `netlify.toml` + `_redirects` |
+| **Backend** | Render | Docker Web Service from `server/Dockerfile`; Express + Socket.io on one process |
+| **Database** | MongoDB Atlas | Managed cluster; connection string in Render env (`MONGODB_URI`) |
+| **Email** | Resend | Outbound mail from the Render API (`EMAIL_PROVIDER=resend`); not hosted on Render |
+| **CI** | GitHub Actions | `.github/workflows/ci.yml` — lint + 171 tests on push/PR to `main` |
+
+**Key cross-origin settings:** Netlify sets `VITE_API_URL` and `VITE_WS_URL` to the Render host. Render sets `CLIENT_URL` to the Netlify URL for invite/reset links, CORS, and `sameSite: none` refresh cookies.
+
+Local development uses the same app shape with **Docker Compose** (API + MongoDB + Mailpit) instead of Atlas/Resend/Netlify/Render — see [localrun.md](./localrun.md).
+
 ---
 
 ## 4. Technology Choices
@@ -138,7 +203,7 @@ flowchart TB
 | API docs | **Swagger (OpenAPI 3)** | Postman collection only |
 | Database | **MongoDB Atlas** | Self-hosted MongoDB |
 | Backend hosting | **Render** | Railway, Fly.io |
-| Frontend hosting | **Vercel** | Netlify |
+| Frontend hosting | **Netlify** | Vercel |
 
 *Technology rationale unchanged from v1 — see Section 4.2 in prior revision; TypeScript, Express, Socket.io, Zustand choices still apply.*
 
@@ -926,15 +991,26 @@ flowchart LR
 
 ## 13. Deployment Architecture
 
-**Backend:** Docker image built from `server/Dockerfile` — runs via `docker compose` locally and on **Render** (Web Service, Docker runtime). Production API: **https://trubot-task-manager.onrender.com**.
+Production topology is diagrammed in **§3.2 Production Infrastructure**. Summary:
 
-**Frontend:** Static SPA on **Netlify** — **https://trubotai-taskmanager.netlify.app**. Health check: `GET /api/v1/health`.
+| Layer | Platform | Production URL / endpoint |
+|-------|----------|---------------------------|
+| Frontend | Netlify | https://trubotai-taskmanager.netlify.app |
+| Backend API | Render (Docker) | https://trubot-task-manager.onrender.com/api/v1 |
+| Real-time | Render (same service) | `wss://trubot-task-manager.onrender.com` |
+| Database | MongoDB Atlas | Via `MONGODB_URI` on Render |
+| Email | Resend (called from Render API) | Verification, invite, password-reset |
+| CI | GitHub Actions | Lint + tests on push/PR to `main` |
+
+**Backend:** Docker image built from `server/Dockerfile` — runs via `docker compose` locally and on **Render** (Web Service, Docker runtime). Health check: `GET /api/v1/health`.
+
+**Frontend:** Static SPA on **Netlify** — build from `client/` with `VITE_API_URL` and `VITE_WS_URL` pointing at Render.
 
 **Database:** MongoDB Atlas in production; local MongoDB in Docker Compose.
 
-**Email:** Resend in production; Mailpit in local Docker stack.
+**Email:** Resend in production (API keys on Render); Mailpit in local Docker stack only.
 
-See [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) for env vars, Render setup, and rebuild commands.
+See [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) and [internal/PRODUCTION-DEPLOYMENT.md](./internal/PRODUCTION-DEPLOYMENT.md) for env vars, Render/Netlify setup, and rebuild commands.
 
 Additional env vars:
 
