@@ -28,6 +28,15 @@ Logs: `docker compose logs -f server`
 
 ## Render (production)
 
+**Live API:** https://trubot-task-manager.onrender.com
+
+| Endpoint | URL |
+|----------|-----|
+| Health | https://trubot-task-manager.onrender.com/api/v1/health |
+| Swagger | https://trubot-task-manager.onrender.com/api-docs |
+| REST base | https://trubot-task-manager.onrender.com/api/v1 |
+| Socket.io | https://trubot-task-manager.onrender.com |
+
 ### Option A — Dashboard
 
 1. Create a **Web Service** on [Render](https://render.com).
@@ -59,7 +68,7 @@ Optional: `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`, `INVITE_TOKEN_EXPIR
 
 ### Socket.io on Render
 
-Render web services support WebSockets. Set the client `VITE_WS_URL` to your Render service URL (e.g. `https://task-manager-api.onrender.com`).
+Render web services support WebSockets. Set the client `VITE_WS_URL` to `https://trubot-task-manager.onrender.com` (and `VITE_API_URL` to `https://trubot-task-manager.onrender.com/api/v1`).
 
 ### Database
 

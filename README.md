@@ -87,13 +87,24 @@ Merge new email variables into `server/.env` if you already have one from before
 
 Full backend deploy steps: [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) (Render env vars, health check, Socket.io).
 
+Netlify build env (when you deploy the frontend): `VITE_API_URL=https://trubot-task-manager.onrender.com/api/v1`, `VITE_WS_URL=https://trubot-task-manager.onrender.com`.
+
+### Production URLs
+
+| Service | Status | URL |
+|---------|--------|-----|
+| API (Render) | Live | https://trubot-task-manager.onrender.com |
+| Health | Live | https://trubot-task-manager.onrender.com/api/v1/health |
+| Swagger | Live | https://trubot-task-manager.onrender.com/api-docs |
+| Frontend (Netlify) | Not deployed yet | https://trubotai-taskmanager.netlify.app (planned) |
+
 Production backend env:
 
 ```env
 EMAIL_PROVIDER=resend
 RESEND_API_KEY=re_...
 EMAIL_FROM=Task Manager <onboarding@yourdomain.com>
-CLIENT_URL=https://your-app.vercel.app
+CLIENT_URL=https://trubotai-taskmanager.netlify.app
 ```
 
 ## Features implemented
