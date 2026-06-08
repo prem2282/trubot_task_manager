@@ -419,21 +419,21 @@ sequenceDiagram
     participant C as Client
     participant A as API
     participant D as MongoDB
-    participant E as Email (Mailpit/Resend)
+    participant E as "Email Mailpit or Resend"
 
-    C->>A: POST /auth/register { name, email, password, accountName? }
+    C->>A: POST /auth/register
     A->>D: Begin transaction
     A->>D: Create Account
-    A->>D: Create Workspace (isDefault: true)
-    A->>D: Create User (verificationStatus: unverified, passwordHash)
-    A->>D: Create AccountMembership (admin, unverified)
-    A->>D: Create WorkspaceMembership (admin, unverified)
+    A->>D: Create Workspace isDefault true
+    A->>D: Create User unverified with passwordHash
+    A->>D: Create AccountMembership admin unverified
+    A->>D: Create WorkspaceMembership admin unverified
     A->>D: Commit transaction
-    A->>E: Send verification email (SMTP / Resend)
-    A-->>C: 201 { requiresVerification: true, email, message }
-    C->>A: POST /auth/verify-email/:token
-    A->>D: Mark user + memberships verified; consume token
-    A-->>C: 200 { accessToken, user, account, workspace }
+    A->>E: Send verification email
+    A-->>C: 201 requiresVerification true
+    C->>A: POST /auth/verify-email token
+    A->>D: Mark user and memberships verified
+    A-->>C: 200 accessToken user account workspace
 ```
 
 **Atomicity:** Account + Workspace + User + both Memberships created in a MongoDB transaction. Partial failure rolls back.
@@ -447,24 +447,24 @@ sequenceDiagram
     participant M as membershipService
     participant D as MongoDB
 
-    Admin->>A: POST /invites { email, name?, workspaceId? }
+    Admin->>A: POST /invites
     Note over A: requireAccountAdmin middleware
     A->>D: Find User by email
 
-    alt User not found OR user.verificationStatus = unverified
-        A->>D: Create User stub if needed (unverified)
-        A->>M: addToWorkspace(user, workspace, member, unverified)
-        M->>D: Upsert AccountMembership (unverified)
-        M->>D: Upsert WorkspaceMembership (unverified)
-        A->>D: Create Invitation (tokenHash, pending)
-        A-->>Admin: 201 { type: pending, inviteUrl, expiresAt }
-        Note over Admin: Invite email sent; admin can also copy inviteUrl
-    else User.verificationStatus = verified
-        A->>M: addToWorkspace(user, workspace, member, verified)
-        M->>D: Upsert AccountMembership (verified)
-        M->>D: Upsert WorkspaceMembership (verified)
-        A-->>Admin: 201 { type: added, user, accountId, workspaceId }
-        Note over Admin: Member active immediately — no link
+    alt User not found or unverified
+        A->>D: Create User stub if needed unverified
+        A->>M: addToWorkspace unverified member
+        M->>D: Upsert AccountMembership unverified
+        M->>D: Upsert WorkspaceMembership unverified
+        A->>D: Create Invitation pending tokenHash
+        A-->>Admin: 201 type pending inviteUrl expiresAt
+        Note over Admin: Invite email sent admin can copy link
+    else User is verified
+        A->>M: addToWorkspace verified member
+        M->>D: Upsert AccountMembership verified
+        M->>D: Upsert WorkspaceMembership verified
+        A-->>Admin: 201 type added user active immediately
+        Note over Admin: Member active immediately no link
     end
 ```
 
@@ -486,16 +486,16 @@ sequenceDiagram
     participant A as API
     participant D as MongoDB
 
-    I->>A: GET /invites/:token/validate (public)
-    A->>D: Find invitation by tokenHash, check pending + not expired
-    A-->>I: 200 { email, accountName, workspaceName, inviteeName? }
+    I->>A: GET /invites token validate public
+    A->>D: Find invitation by tokenHash pending not expired
+    A-->>I: 200 email accountName workspaceName
 
-    I->>A: POST /invites/:token/accept { name, password }
-    A->>D: Update User: passwordHash, verificationStatus=verified
-    A->>D: Update AccountMembership: status=verified
-    A->>D: Update WorkspaceMembership: status=verified
-    A->>D: Update Invitation: status=accepted
-    A-->>I: 200 { accessToken, accountId, workspaceId } + refresh cookie
+    I->>A: POST /invites token accept name password
+    A->>D: Update User passwordHash verified
+    A->>D: Update AccountMembership verified
+    A->>D: Update WorkspaceMembership verified
+    A->>D: Update Invitation status accepted
+    A-->>I: 200 accessToken plus refresh cookie
 ```
 
 > **Note:** This flow applies only to users who are not yet globally verified. Verified users are added via Path C (Section 6.2) without an invitation token.
@@ -506,23 +506,23 @@ sequenceDiagram
 sequenceDiagram
     participant U as User
     participant A as API
-    participant M as Mailpit/Resend
+    participant M as "Mailpit or Resend"
     participant D as MongoDB
 
-    Note over U,D: Email verification (after register)
-    U->>A: POST /auth/resend-verification { email }
-    A->>D: Create VerificationToken (email_verification)
+    Note over U,D: Email verification after register
+    U->>A: POST /auth/resend-verification
+    A->>D: Create VerificationToken email_verification
     A->>M: Send verify link
-    U->>M: Open inbox (local: http://localhost:8025)
-    U->>A: POST /auth/verify-email/:token
-    A->>D: Activate user + memberships; mark token used
+    U->>M: Open inbox
+    U->>A: POST /auth/verify-email token
+    A->>D: Activate user and memberships mark token used
 
     Note over U,D: Password reset
-    U->>A: POST /auth/forgot-password { email }
-    A->>D: Create VerificationToken (password_reset)
-    A->>M: Send reset link (always 200 — no email enumeration)
-    U->>A: POST /auth/reset-password/:token { password }
-    A->>D: Update passwordHash; revoke refresh tokens
+    U->>A: POST /auth/forgot-password
+    A->>D: Create VerificationToken password_reset
+    A->>M: Send reset link always 200
+    U->>A: POST /auth/reset-password token
+    A->>D: Update passwordHash revoke refresh tokens
 ```
 
 **Token storage:** Raw tokens never stored — only SHA-256 hash (same pattern as invitations). TTL indexes on `expiresAt`.
@@ -544,10 +544,10 @@ sequenceDiagram
     participant A as API
 
     U->>A: GET /auth/memberships
-    A-->>U: [{ account, workspaces, roles }]
+    A-->>U: accounts workspaces roles list
 
-    U->>A: POST /auth/switch-context { accountId, workspaceId }
-    A-->>U: { accessToken } with updated accountId + workspaceId
+    U->>A: POST /auth/switch-context
+    A-->>U: new accessToken with accountId workspaceId
 ```
 
 Login defaults to the account created at registration (where user is admin). User switches context to access other accounts they belong to.
