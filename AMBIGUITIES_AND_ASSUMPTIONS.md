@@ -257,7 +257,7 @@
 
 - Registrant: **verified** immediately at signup
 - New invitee: **unverified** until invite link + password set
-- **No email sending** — link manually shared only for new/unverified users
+- **Invite email sent** for new/unverified users; admin can still copy the link from the Team page
 
 **Rationale (user override):** "Until then the user is an unverified member" applies to new invitees only. Already-verified users join new accounts/workspaces the moment the admin adds them.
 
@@ -322,7 +322,7 @@
 
 ### Q21 — How are invitations delivered?
 
-**Assumed answer:** **Manual link share for new users only — no email integration**
+**Assumed answer:** **Automated invite email for new/unverified users; copyable link also returned to admin**
 
 **Flow (branching on invitee):**
 
@@ -330,12 +330,12 @@
 
 | Invitee | Server action | API response |
 |---------|---------------|--------------|
-| Email not found OR user `unverified` | Create/update unverified memberships + `Invitation` token | `{ type: 'pending', inviteUrl, expiresAt }` — admin copies link manually |
+| Email not found OR user `unverified` | Create/update unverified memberships + `Invitation` token + send invite email | `{ type: 'pending', inviteUrl, expiresAt, emailSent }` — email to invitee; admin can copy link |
 | User already `verified` | Create verified `AccountMembership` + `WorkspaceMembership` immediately | `{ type: 'added', user, memberships }` — no link |
 
-**Rationale (user override):** Link is manually shared only when password setup is required. Verified users are added instantly.
+**Rationale:** Password setup still required for new invitees; email delivers the link automatically while the Team page keeps a copyable fallback.
 
-**Status:** **Confirmed** (updated 2026-06-06)
+**Status:** **Confirmed** (updated 2026-06-08)
 
 ---
 

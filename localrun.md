@@ -32,6 +32,7 @@ Deploy details: [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) · full runbook i
 1. Register at http://localhost:5173/register
 2. Open http://localhost:8025 — click the verification email link
 3. Use **Forgot password?** on login — reset link also appears in Mailpit
+4. As an account admin, invite someone from **Team** — the invite email appears in Mailpit; the copyable link also shows on screen
 
 Ensure `server/.env` exists (created from `.env.example` on first `./dev.sh start`). Docker Compose loads it for the API container and overrides `MONGODB_URI` / `SMTP_HOST` for the internal network.
 

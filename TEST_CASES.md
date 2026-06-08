@@ -2,7 +2,7 @@
 
 One-line summary of every automated test. Use this to see what is covered without opening the test source files.
 
-**156 tests total** — 47 client unit · 86 server unit · 23 server integration
+**158 tests total** — 48 client unit · 87 server unit · 23 server integration
 
 Run everything: `./test.sh all`
 
@@ -164,7 +164,8 @@ Run everything: `./test.sh all`
 ### Service — `inviteService`
 
 - **createInvite:** Returns immediate add result for verified users.
-- **createInvite:** Creates a pending invitation for new users.
+- **createInvite:** Creates a pending invitation for new users and sends invite email.
+- **createInvite:** Still returns invite link when invite email fails to send (`emailSent: false`).
 - **createInvite:** Rejects invites to workspaces outside the account.
 - **validateInviteToken:** Returns invite preview details for valid tokens.
 - **validateInviteToken:** Marks expired invitations and returns 410.
@@ -262,6 +263,6 @@ HTTP + in-memory MongoDB. Email sending is mocked.
 ### Invites API
 
 - Immediately adds verified users without creating a pending invite.
-- Creates pending invites for new users and allows revoke/list.
+- Creates pending invites for new users (with `emailSent`), and allows revoke/list.
 - Blocks account members from creating invites.
 - Accepts a pending invite and logs the user in.

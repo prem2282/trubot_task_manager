@@ -12,6 +12,10 @@ process.env.MONGOMS_DOWNLOAD_DIR =
 
 import { vi } from 'vitest';
 
+vi.mock('../services/emailService', () => ({
+  sendEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../services/verificationService', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../services/verificationService')>();
   return {

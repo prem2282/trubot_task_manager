@@ -86,7 +86,18 @@
 1. Create user stub if needed (`verificationStatus: unverified`, no password)
 2. Call `addToWorkspace()` with status unverified
 3. Generate random invite token; store hash in `Invitation`
-4. Return `{ type: 'pending', inviteUrl, expiresAt, email }` for admin to copy manually
+4. Send invite email via `sendWorkspaceInviteEmail()` (Resend in production, Mailpit locally)
+5. Return `{ type: 'pending', inviteUrl, expiresAt, email, emailSent }` — link also shown on Team page
+
+If the email fails to send, the invite is still created and `emailSent` is `false` so the admin can share the link manually.
+
+---
+
+### `sendWorkspaceInviteEmail(options)`
+
+**What it does:** Sends the workspace invitation email with account name, workspace name, inviter name, and accept link.
+
+**Called by:** `createInvite()` for pending invites only.
 
 ---
 

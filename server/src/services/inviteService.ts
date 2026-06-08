@@ -11,7 +11,43 @@ import {
   hashPassword,
   hashToken,
 } from '../utils/crypto';
+import { sendEmail } from './emailService';
+import { inviteEmailHtml, inviteEmailText } from './emailTemplates';
 import { addToWorkspace } from './membershipService';
+
+export async function sendWorkspaceInviteEmail(options: {
+  to: string;
+  inviteeName: string;
+  inviteUrl: string;
+  accountName: string;
+  workspaceName: string;
+  inviterName: string;
+  expiresDays: number;
+}) {
+  const { to, inviteeName, inviteUrl, accountName, workspaceName, inviterName, expiresDays } =
+    options;
+
+  await sendEmail({
+    to,
+    subject: `You're invited to ${accountName} on Task Manager`,
+    html: inviteEmailHtml(
+      inviteeName,
+      inviteUrl,
+      accountName,
+      workspaceName,
+      inviterName,
+      expiresDays
+    ),
+    text: inviteEmailText(
+      inviteeName,
+      inviteUrl,
+      accountName,
+      workspaceName,
+      inviterName,
+      expiresDays
+    ),
+  });
+}
 
 async function createAuthResultForUser(
   userId: string,
@@ -130,11 +166,32 @@ export async function createInvite(
 
   const inviteUrl = `${env.CLIENT_URL}/accept-invite/${rawToken}`;
 
+  const account = await Account.findById(accountId);
+  const inviter = await User.findById(invitedBy);
+  const inviteeName = name ?? user.name;
+
+  let emailSent = false;
+  try {
+    await sendWorkspaceInviteEmail({
+      to: normalizedEmail,
+      inviteeName,
+      inviteUrl,
+      accountName: account?.name ?? 'your team',
+      workspaceName: workspace.name,
+      inviterName: inviter?.name ?? 'A team admin',
+      expiresDays: env.INVITE_TOKEN_EXPIRY_DAYS,
+    });
+    emailSent = true;
+  } catch (error) {
+    console.error('[invite] Failed to send invite email:', error);
+  }
+
   return {
     type: 'pending' as const,
     inviteUrl,
     expiresAt,
     email: normalizedEmail,
+    emailSent,
   };
 }
 

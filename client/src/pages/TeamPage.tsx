@@ -17,9 +17,12 @@ export default function TeamPage() {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [inviteWorkspaceId, setInviteWorkspaceId] = useState(workspace?.id ?? '');
-  const [result, setResult] = useState<{ type: string; inviteUrl?: string; message?: string } | null>(
-    null
-  );
+  const [result, setResult] = useState<{
+    type: string;
+    inviteUrl?: string;
+    message?: string;
+    emailSent?: boolean;
+  } | null>(null);
   const [invites, setInvites] = useState<InviteItem[]>([]);
   const [error, setError] = useState('');
 
@@ -68,8 +71,12 @@ export default function TeamPage() {
         workspaceId: inviteWorkspaceId || workspace?.id,
       });
       if (data.data.type === 'pending') {
-        setResult({ type: 'pending', inviteUrl: data.data.inviteUrl });
-        showToast('Invite link created');
+        setResult({
+          type: 'pending',
+          inviteUrl: data.data.inviteUrl,
+          emailSent: data.data.emailSent,
+        });
+        showToast(data.data.emailSent ? 'Invite email sent' : 'Invite link created');
       } else {
         setResult({ type: 'added', message: `${email} added to the team.` });
         showToast('Member added to account');
@@ -136,7 +143,7 @@ export default function TeamPage() {
         <label className="block">
           <FieldLabel
             label="Invitee email"
-            tip="If they already have an account they are added immediately; otherwise a sign-up link is generated."
+            tip="If they already have an account they are added immediately; otherwise an invite email is sent with a sign-up link."
           />
           <input
             type="email"
@@ -168,7 +175,11 @@ export default function TeamPage() {
 
       {result?.type === 'pending' && result.inviteUrl && (
         <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <p className="mb-2 text-sm">Share this link manually with the invitee:</p>
+          <p className="mb-2 text-sm">
+            {result.emailSent
+              ? 'An invitation email was sent. You can also copy and share this link directly:'
+              : 'The invite email could not be sent. Share this link manually with the invitee:'}
+          </p>
           <code className="block break-all text-xs">{result.inviteUrl}</code>
           <button
             onClick={() => copyLink(result.inviteUrl!)}

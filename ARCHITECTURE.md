@@ -10,7 +10,7 @@
 
 This document defines the architecture for a **multi-tenant task management application** built on the MERN stack. Each registration creates an isolated **Account** with a **default Workspace**. The registrant becomes **account admin** and **workspace admin**. Additional users are added by an admin via invite:
 
-- **New / unverified users** — admin shares an invite link manually; user sets password to become verified
+- **New / unverified users** — system emails an invite link; admin can also copy the link from the UI; user sets password to become verified
 - **Already verified users** — added to the account and workspace **immediately** (no link, no password step)
 
 A user may belong to **multiple accounts** and **multiple workspaces per account**. **Adding a user to a workspace always creates account membership** on the parent account. Within an account, users can **switch workspaces**, **create workspaces** (account admin), and **manage workspace membership** (account admin or workspace admin).
@@ -151,7 +151,7 @@ flowchart TB
 | Verified user re-invite | Immediate membership — no Invitation record | Simpler UX for users already in the system |
 | Invite tokens | Stored hashed (like passwords) | Raw token only returned once to admin; DB leak doesn't expose usable links |
 | Email (auth flows) | **Mailpit (local) + Resend (production)** | Gmail SMTP, SendGrid — Mailpit is zero-cost for dev; Resend free tier for deploy |
-| Workspace invite delivery | **Manual link share** | Email invite — unchanged; admin copies link from UI |
+| Workspace invite delivery | **Email + copyable link** | Invite emailed to new/unverified users; link also shown to admin |
 | Workspace switcher | **Full UI + API** | List/switch/create workspaces; manage members per workspace |
 
 ---
@@ -458,7 +458,7 @@ sequenceDiagram
         M->>D: Upsert WorkspaceMembership (unverified)
         A->>D: Create Invitation (tokenHash, pending)
         A-->>Admin: 201 { type: pending, inviteUrl, expiresAt }
-        Note over Admin: Admin copies inviteUrl manually
+        Note over Admin: Invite email sent; admin can also copy inviteUrl
     else User.verificationStatus = verified
         A->>M: addToWorkspace(user, workspace, member, verified)
         M->>D: Upsert AccountMembership (verified)
@@ -810,7 +810,7 @@ flowchart LR
 
 | Response `type` | UI behavior |
 |-----------------|-------------|
-| `pending` | Show copyable invite link + expiry; explain manual share |
+| `pending` | Email sent to invitee; show copyable invite link + expiry on screen |
 | `added` | Toast: "{email} added to team" — no link shown |
 
 ### 10.7 Accept Invite Page UX (new users only)
@@ -1019,7 +1019,6 @@ task-manager/
 
 ## 16. Out of Scope (Explicit)
 
-- Email delivery for **workspace invites** (admin still copies link manually)
 - Account-only membership UI (must belong to ≥1 workspace to see tasks)
 - File attachments, comments, activity log
 - GraphQL, microservices

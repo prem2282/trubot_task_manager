@@ -15,7 +15,7 @@ For setup and commands, see [README.md](./README.md). For technical design, see 
 | **Stack** | Node.js, Express, TypeScript, MongoDB, React, Vite, Socket.io, Zustand, Tailwind |
 | **Run locally** | `./dev.sh start` — see [localrun.md](./localrun.md) |
 | **Local URLs** | UI: http://localhost:5173 · API: http://localhost:5000 · Swagger: http://localhost:5000/api-docs · Mailpit: http://localhost:8025 |
-| **Tests** | `./test.sh all` — 156 tests (see [TEST_CASES.md](./TEST_CASES.md)) |
+| **Tests** | `./test.sh all` — 158 tests (see [TEST_CASES.md](./TEST_CASES.md)) |
 
 ---
 
@@ -59,7 +59,7 @@ Registration always creates an isolated company — there is no shared public po
 ### 5. Team and invitations
 
 1. **Team** page — account admins invite people by email and pick a target workspace.
-2. **New or unverified user:** system creates a **pending invite link**; admin **copies and shares manually** (the assignment did not require automated invite email).
+2. **New or unverified user:** system creates a **pending invite link**, **emails it to the invitee**, and shows the same link on screen for the admin to copy if needed.
 3. Invitee opens **Accept Invite**, sets name and password, becomes a verified **member** of that account and workspace.
 4. **Already verified user** (registered elsewhere or previously invited): added **immediately** — no link, no password step.
 5. Admins can **list and revoke** pending invites; invites expire after 7 days.
@@ -124,7 +124,7 @@ During planning, the following rules were adopted to make multi-tenancy concrete
 - Every **registration creates a new Account** with a **default Workspace**.
 - The registrant is **account admin** and **workspace admin**.
 - Admins **invite** others; invitees become **members**.
-- Invites for new users use a **manually shared link** (not automated invite email).
+- Invites for new users are **emailed automatically**; the admin can still copy the link from the Team page.
 - Invitee sets password via the link and becomes **verified**; until then they cannot log in.
 
 ---
@@ -151,7 +151,7 @@ During planning, the following rules were adopted to make multi-tenancy concrete
 | S3 Live demo | ✅ | [trubotai-taskmanager.netlify.app](https://trubotai-taskmanager.netlify.app) · API on Render |
 | S4 Time tracking | ⚠️ | Not included as a separate time log file |
 | Bonus: TypeScript | ✅ | Full stack |
-| Bonus: Tests | ✅ | 156 tests — unit + integration |
+| Bonus: Tests | ✅ | 158 tests — unit + integration |
 | Bonus: Docker | ✅ | API in Docker (`server/Dockerfile`); MongoDB + Mailpit via `docker-compose.yml`; UI on host in dev |
 | Bonus: CI/CD | ✅ | GitHub Actions runs tests on push/PR; Netlify + Render auto-deploy `main` |
 | Bonus: Performance | ⚠️ | Pagination, indexes; no advanced tuning |
@@ -178,7 +178,7 @@ Part 5 describes a **single-team task app**. The project builds a **small SaaS-s
 | **Multiple workspaces per account** | No | Real teams split work; account admin can create workspaces |
 | **Workspace member management (add, remove, promote, demote)** | No | Admins must manage who sees which tasks |
 | **Last-admin guard** | No | Prevents accidental lockout with no workspace admin |
-| **Invite flow (pending link + instant add for verified users)** | No | Follows adopted product rules; manual link share per assignment ambiguity |
+| **Invite flow (email + link + instant add for verified users)** | No | Pending invites emailed via Resend/Mailpit; link also shown to admin |
 | **Revoke invites + 7-day expiry** | No | Practical admin control |
 | **Account / workspace switchers in nav** | No | Users can belong to multiple accounts/workspaces |
 | **Task comments** | No | Collaboration on a task thread |
@@ -186,7 +186,7 @@ Part 5 describes a **single-team task app**. The project builds a **small SaaS-s
 | **Assignee-only edit rules** | No | Assignee updates status, not arbitrary fields |
 | **Role-based task visibility for members** | No | Members see own + assigned tasks only; admins see all |
 | **Mailpit (local) + Resend (prod) email** | No | Verification and reset emails work end-to-end in dev and deploy |
-| **156 automated tests** | Bonus only | Assignment bonus; protects regressions on roles and invites |
+| **158 automated tests** | Bonus only | Assignment bonus; protects regressions on roles and invites |
 | **TEST_CASES.md, server/client code docs** | Extra docs | Plain-language and module-level documentation |
 | **Filled Swagger spec (26 routes)** | B7 requires docs | Full API reference at `/api-docs` |
 | **`dev.sh` one-command local stack** | No | Docker stack + UI; see [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) |
@@ -199,7 +199,6 @@ The extra scope turns a minimal task CRUD demo into a **multi-tenant team produc
 
 | Item | Notes |
 |------|-------|
-| **Automated invite email** | Resolved to manual link share; auth emails (verify/reset) are sent |
 | **Time log file** | Submission guideline S4; not committed separately |
 | **GraphQL, file upload, microservices** | Discussed in Part 1–2 Q&A only — not part of Part 5 build |
 | **Socket.io integration tests** | Real-time behavior verified manually; not in automated suite |
@@ -237,7 +236,7 @@ Health · Authentication · Workspaces · Tasks · Invites · Members · Users �
 | Client unit | 47 | Components, pages, role-specific UI |
 | Server unit | 86 | Services, middleware, validators |
 | Server integration | 23 | HTTP flows with in-memory MongoDB |
-| **Total** | **156** | See [TEST_CASES.md](./TEST_CASES.md) for every test name |
+| **Total** | **158** | See [TEST_CASES.md](./TEST_CASES.md) for every test name |
 
 ```bash
 ./test.sh all
@@ -254,7 +253,7 @@ Health · Authentication · Workspaces · Tasks · Invites · Members · Users �
 | [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) | API Docker image, Render deploy |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, data model, diagrams |
 | [AMBIGUITIES_AND_ASSUMPTIONS.md](./AMBIGUITIES_AND_ASSUMPTIONS.md) | Scope decisions and rationale |
-| [TEST_CASES.md](./TEST_CASES.md) | One-line list of all 156 tests |
+| [TEST_CASES.md](./TEST_CASES.md) | One-line list of all 158 tests |
 | [server/documentation/](./server/documentation/) | Backend module reference |
 | [client/documentation/](./client/documentation/) | Frontend module reference |
 | [bugtracker.md](./bugtracker.md) | Known issues tracked during development |

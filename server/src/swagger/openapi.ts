@@ -883,7 +883,7 @@ export const swaggerSpec = {
         tags: ['Invites'],
         summary: 'Create invite',
         description:
-          'Account admin only. Verified existing users are added immediately; new users receive a pending invite link.',
+          'Account admin only. Verified existing users are added immediately; new users receive a pending invite link and an invitation email.',
         security: [{ bearerAuth: [] }],
         requestBody: {
           required: true,
@@ -903,7 +903,8 @@ export const swaggerSpec = {
         },
         responses: {
           '201': {
-            description: 'User added immediately (`type: added`) or pending invite created (`type: pending`)',
+            description:
+              'User added immediately (`type: added`) or pending invite created (`type: pending`, `inviteUrl`, `emailSent`)',
           },
           '403': { $ref: '#/components/responses/Forbidden' },
         },

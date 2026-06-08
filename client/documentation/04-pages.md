@@ -164,7 +164,7 @@ Full-screen views in `client/src/pages/`. Each page corresponds to a route.
 **Invite form:** Email + optional name + **workspace selector** → `POST /invites` with `workspaceId`.
 
 **Two outcomes displayed:**
-- **`type: pending`** — Shows copyable invite URL for admin to share manually + toast
+- **`type: pending`** — Invite email sent to invitee; shows copyable invite URL as fallback + toast (`Invite email sent` or `Invite link created` if email failed)
 - **`type: added`** — Toast that verified user was added immediately
 
 **Pending list:** Shows email, workspace name, expiry, and **Revoke** button → `DELETE /invites/:id`.

@@ -17,6 +17,10 @@ vi.mock('../membershipService', () => ({
   addToWorkspace: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../emailService', () => ({
+  sendEmail: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('../../utils/crypto', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../utils/crypto')>();
   return {
@@ -52,6 +56,7 @@ vi.mock('../../models', () => ({
 
 import { User, Workspace, Invitation, Account } from '../../models';
 import { addToWorkspace } from '../membershipService';
+import { sendEmail } from '../emailService';
 
 describe('inviteService', () => {
   beforeEach(() => {
@@ -85,27 +90,62 @@ describe('inviteService', () => {
         })
       );
       expect(Invitation.create).not.toHaveBeenCalled();
+      expect(sendEmail).not.toHaveBeenCalled();
     });
 
-    it('creates a pending invitation for new users', async () => {
+    it('creates a pending invitation for new users and sends invite email', async () => {
       vi.mocked(Workspace.findOne).mockResolvedValue({
         _id: new Types.ObjectId(workspaceId),
+        name: 'Engineering',
       } as never);
       vi.mocked(User.findOne).mockResolvedValue(null);
       vi.mocked(User.create).mockResolvedValue({
         _id: new Types.ObjectId(userId),
+        name: 'New User',
         email: 'new@example.com',
       } as never);
+      vi.mocked(User.findById).mockResolvedValue({ name: 'Admin User' } as never);
+      vi.mocked(Account.findById).mockResolvedValue({ name: 'Acme Corp' } as never);
       vi.mocked(Invitation.create).mockResolvedValue({} as never);
 
       const result = await createInvite(userId, accountId, workspaceId, 'new@example.com', 'New User');
 
       expect(result.type).toBe('pending');
+      expect(result.emailSent).toBe(true);
       expect(result.inviteUrl).toContain('/accept-invite/raw-invite-token');
       expect(Invitation.create).toHaveBeenCalled();
       expect(addToWorkspace).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'unverified' })
       );
+      expect(sendEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'new@example.com',
+          subject: expect.stringContaining('Acme Corp'),
+        })
+      );
+    });
+
+    it('still returns invite link when invite email fails to send', async () => {
+      vi.mocked(Workspace.findOne).mockResolvedValue({
+        _id: new Types.ObjectId(workspaceId),
+        name: 'Engineering',
+      } as never);
+      vi.mocked(User.findOne).mockResolvedValue(null);
+      vi.mocked(User.create).mockResolvedValue({
+        _id: new Types.ObjectId(userId),
+        name: 'New User',
+        email: 'new@example.com',
+      } as never);
+      vi.mocked(User.findById).mockResolvedValue({ name: 'Admin User' } as never);
+      vi.mocked(Account.findById).mockResolvedValue({ name: 'Acme Corp' } as never);
+      vi.mocked(Invitation.create).mockResolvedValue({} as never);
+      vi.mocked(sendEmail).mockRejectedValueOnce(new Error('SMTP unavailable'));
+
+      const result = await createInvite(userId, accountId, workspaceId, 'new@example.com', 'New User');
+
+      expect(result.type).toBe('pending');
+      expect(result.emailSent).toBe(false);
+      expect(result.inviteUrl).toContain('/accept-invite/raw-invite-token');
     });
 
     it('rejects invites to workspaces outside the account', async () => {

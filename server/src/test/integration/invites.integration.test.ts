@@ -62,6 +62,7 @@ describe('Invites API integration', () => {
     expect(createRes.status).toBe(201);
     expect(createRes.body.data.type).toBe('pending');
     expect(createRes.body.data.inviteUrl).toContain('/accept-invite/');
+    expect(createRes.body.data.emailSent).toBe(true);
 
     const listRes = await request(app).get('/api/v1/invites').set(withAuth(admin.accessToken));
 

@@ -64,3 +64,40 @@ ${resetUrl}
 
 This link expires in ${expiresHours} hour${expiresHours === 1 ? '' : 's'}. If you did not request a reset, ignore this email.`;
 }
+
+export function inviteEmailHtml(
+  inviteeName: string,
+  inviteUrl: string,
+  accountName: string,
+  workspaceName: string,
+  inviterName: string,
+  expiresDays: number
+): string {
+  return layout(
+    `Join ${accountName}`,
+    `<p>Hi ${inviteeName},</p>
+     <p><strong>${inviterName}</strong> invited you to join <strong>${accountName}</strong> on Task Manager in the <strong>${workspaceName}</strong> workspace.</p>
+     <p>Accept the invitation to set your password and start collaborating.</p>
+     <p>This link expires in ${expiresDays} day${expiresDays === 1 ? '' : 's'}.</p>`,
+    inviteUrl,
+    'Accept invitation'
+  );
+}
+
+export function inviteEmailText(
+  inviteeName: string,
+  inviteUrl: string,
+  accountName: string,
+  workspaceName: string,
+  inviterName: string,
+  expiresDays: number
+): string {
+  return `Hi ${inviteeName},
+
+${inviterName} invited you to join ${accountName} on Task Manager in the ${workspaceName} workspace.
+
+Accept the invitation and set your password:
+${inviteUrl}
+
+This link expires in ${expiresDays} day${expiresDays === 1 ? '' : 's'}.`;
+}
