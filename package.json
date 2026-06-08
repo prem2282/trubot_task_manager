@@ -1,0 +1,25 @@
+{
+  "name": "task-manager",
+  "private": true,
+  "scripts": {
+    "dev": "./dev.sh start",
+    "dev:stop": "./dev.sh stop",
+    "dev:status": "./dev.sh status",
+    "dev:logs": "./dev.sh logs",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "build:server": "npm run build --prefix server",
+    "build:client": "npm run build --prefix client",
+    "lint": "npm run lint --prefix server && npm run lint --prefix client",
+    "test": "./test.sh unit",
+    "test:unit": "./test.sh unit",
+    "test:client": "./test.sh client",
+    "test:server": "./test.sh server",
+    "test:integration": "./test.sh integration",
+    "test:all": "./test.sh all",
+    "test:watch": "npm run test:watch --prefix client"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,28 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: task-manager-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]}) }" | mongosh --quiet
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: task-manager-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  mongo_data:

@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Environment & secrets (keep .env.example templates tracked)
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Local dev runtime (dev.sh PIDs and logs)
+.dev/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test output
+coverage/
+
+# Vite / Vitest cache
+.vite/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE / editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Personal / local-only — do not ship
+internal/
