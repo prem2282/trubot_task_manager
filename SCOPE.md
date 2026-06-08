@@ -153,7 +153,7 @@ During planning, the following rules were adopted to make multi-tenancy concrete
 | Bonus: TypeScript | ✅ | Full stack |
 | Bonus: Tests | ✅ | 156 tests — unit + integration |
 | Bonus: Docker | ✅ | API in Docker (`server/Dockerfile`); MongoDB + Mailpit via `docker-compose.yml`; UI on host in dev |
-| Bonus: CI/CD | ❌ | Not configured |
+| Bonus: CI/CD | ✅ | GitHub Actions runs tests on push/PR; Netlify + Render auto-deploy `main` |
 | Bonus: Performance | ⚠️ | Pagination, indexes; no advanced tuning |
 
 All **core Part 5 backend and frontend requirements are implemented**. Production is live on Netlify + Render. Submission item S4 (time log) is still optional/deferred.
@@ -200,14 +200,11 @@ The extra scope turns a minimal task CRUD demo into a **multi-tenant team produc
 | Item | Notes |
 |------|-------|
 | **Automated invite email** | Resolved to manual link share; auth emails (verify/reset) are sent |
-| **CI/CD pipeline** | Listed as bonus; not configured |
-| **Dockerized API** | ✅ | Same `server/Dockerfile` locally and on Render |
-| **Dockerized MongoDB + Mailpit** | ✅ | `docker-compose.yml` |
-| **Production live demo URL** | ✅ | https://trubotai-taskmanager.netlify.app |
-| **Time log file** | Submission guideline; not committed separately |
+| **Time log file** | Submission guideline S4; not committed separately |
 | **GraphQL, file upload, microservices** | Discussed in Part 1–2 Q&A only — not part of Part 5 build |
 | **Socket.io integration tests** | Real-time behavior verified manually; not in automated suite |
 | **E2E browser tests (Playwright/Cypress)** | Unit + API integration tests only |
+| **Advanced performance tuning** | Pagination and indexes only; no load testing or caching layer |
 
 ---
 
@@ -261,3 +258,4 @@ Health · Authentication · Workspaces · Tasks · Invites · Members · Users �
 | [server/documentation/](./server/documentation/) | Backend module reference |
 | [client/documentation/](./client/documentation/) | Frontend module reference |
 | [bugtracker.md](./bugtracker.md) | Known issues tracked during development |
+| [.github/workflows/ci.yml](./.github/workflows/ci.yml) | CI — lint + tests on push/PR |

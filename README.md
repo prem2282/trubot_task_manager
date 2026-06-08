@@ -126,6 +126,18 @@ CLIENT_URL=https://trubotai-taskmanager.netlify.app
 2. Open **Mailpit** at http://localhost:8025 → click verification link
 3. **Forgot password** from login → reset link in Mailpit
 
+## CI/CD
+
+| Layer | What runs | Trigger |
+|-------|-----------|---------|
+| **CI** | Lint + 156 tests (GitHub Actions) | Push or PR to `main` |
+| **CD (frontend)** | Netlify build + deploy | Push to `main` (repo connected in Netlify) |
+| **CD (backend)** | Render Docker build + deploy | Push to `main` (repo connected in Render) |
+
+No extra deploy hooks needed — Netlify and Render already watch GitHub. CI is `.github/workflows/ci.yml`.
+
+Optional later: require the GitHub **CI** check to pass before merging (`Settings → Branches → branch protection` on `main`).
+
 ## Scripts
 
 ```bash
