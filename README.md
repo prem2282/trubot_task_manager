@@ -130,7 +130,7 @@ CLIENT_URL=https://trubotai-taskmanager.netlify.app
 
 | Layer | What runs | Trigger |
 |-------|-----------|---------|
-| **CI** | Lint + 158 tests (GitHub Actions) | Push or PR to `main` |
+| **CI** | Lint + 166 tests (GitHub Actions) | Push or PR to `main` |
 | **CD (frontend)** | Netlify build + deploy | Push to `main` (repo connected in Netlify) |
 | **CD (backend)** | Render Docker build + deploy | Push to `main` (repo connected in Render) |
 
@@ -168,10 +168,10 @@ Integration tests spin up an in-memory MongoDB replica set (no Docker required).
 
 | Suite | Tests | Location |
 |-------|------:|----------|
-| Client unit | 48 | `client/src/**/__tests__/` |
-| Server unit | 87 | `server/src/**/__tests__/` |
+| Client unit | 55 | `client/src/**/__tests__/` |
+| Server unit | 88 | `server/src/**/__tests__/` |
 | Server integration | 23 | `server/src/test/integration/` |
-| **Total** | **158** | |
+| **Total** | **166** | |
 
 ### Coverage by area
 
@@ -203,7 +203,7 @@ npm run test              # vitest in watch mode (server/client)
 npm run test:integration  # server only — integration suite
 ```
 
-More detail: [TEST_CASES.md](./TEST_CASES.md) (one-line index of all 158 tests) · [server/documentation/README.md](./server/documentation/README.md) (server test file index).
+More detail: [TEST_CASES.md](./TEST_CASES.md) (one-line index of all 166 tests) · [server/documentation/README.md](./server/documentation/README.md) (server test file index).
 
 ## Documentation
 

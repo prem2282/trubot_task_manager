@@ -7,7 +7,16 @@ import { useToastStore } from '../store/toastStore';
 import { Task, TaskStatus, User } from '../types';
 import TaskModal from '../components/TaskModal';
 import { FieldLabel } from '../components/InfoTip';
-import { getUserId, dueDateUrgencyChipClass, dueDateUrgencyLabel, getDueDateUrgency, statusChipClass, statusLabel } from '../utils/taskHelpers';
+import {
+  canViewTask,
+  getUserId,
+  normalizeTask,
+  dueDateUrgencyChipClass,
+  dueDateUrgencyLabel,
+  getDueDateUrgency,
+  statusChipClass,
+  statusLabel,
+} from '../utils/taskHelpers';
 
 function getUserName(value: User | string | Record<string, unknown>): string {
   if (typeof value === 'string') return value;
@@ -44,20 +53,41 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchTasks();
     api.get('/users').then(({ data }) => setUsers(data.data));
+  }, [fetchTasks, workspace?.id]);
+
+  useEffect(() => {
     connectSocket();
     const socket = getSocket();
     if (!socket) return;
 
-    socket.on('task:created', ({ task }: { task: Task }) => upsertTask(task));
-    socket.on('task:updated', ({ task }: { task: Task }) => upsertTask(task));
-    socket.on('task:deleted', ({ taskId }: { taskId: string }) => removeTask(taskId));
+    const handleCreated = ({ task }: { task: Task }) => {
+      const normalized = normalizeTask(task);
+      if (canViewTask(normalized, currentUserId, isAdmin)) {
+        upsertTask(normalized);
+      }
+    };
+
+    const handleUpdated = ({ task }: { task: Task }) => {
+      const normalized = normalizeTask(task);
+      if (canViewTask(normalized, currentUserId, isAdmin)) {
+        upsertTask(normalized);
+      } else {
+        removeTask(normalized._id);
+      }
+    };
+
+    const handleDeleted = ({ taskId }: { taskId: string }) => removeTask(taskId);
+
+    socket.on('task:created', handleCreated);
+    socket.on('task:updated', handleUpdated);
+    socket.on('task:deleted', handleDeleted);
 
     return () => {
-      socket.off('task:created');
-      socket.off('task:updated');
-      socket.off('task:deleted');
+      socket.off('task:created', handleCreated);
+      socket.off('task:updated', handleUpdated);
+      socket.off('task:deleted', handleDeleted);
     };
-  }, [fetchTasks, upsertTask, removeTask]);
+  }, [currentUserId, isAdmin, upsertTask, removeTask, workspace?.id]);
 
   const applyFilters = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

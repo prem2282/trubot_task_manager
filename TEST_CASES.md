@@ -2,13 +2,13 @@
 
 One-line summary of every automated test. Use this to see what is covered without opening the test source files.
 
-**158 tests total** — 48 client unit · 87 server unit · 23 server integration
+**166 tests total** — 55 client unit · 88 server unit · 23 server integration
 
 Run everything: `./test.sh all`
 
 ---
 
-## Client unit tests (47)
+## Client unit tests (55)
 
 ### `AppLayout`
 
@@ -96,9 +96,19 @@ Run everything: `./test.sh all`
 - Returns false for plain workspace members.
 - Returns false when account or workspace id is missing.
 
+### `taskHelpers`
+
+- **getUserId:** Reads id from auth-style user objects.
+- **getUserId:** Reads `_id` from mongoose-style user objects.
+- **getUserId:** Reads string user ids.
+- **canViewTask:** Allows assignees to view assigned tasks.
+- **canViewTask:** Denies unrelated workspace members.
+- **canViewTask:** Allows admins to view any task.
+- **normalizeTask:** Adds id on mongoose-shaped assignee refs from socket payloads.
+
 ---
 
-## Server unit tests (86)
+## Server unit tests (88)
 
 ### Utils — `errors`
 
@@ -111,6 +121,10 @@ Run everything: `./test.sh all`
 - Returns a string route parameter.
 - Returns the first value when parameter is an array.
 - Throws when parameter is missing.
+
+### Utils — `taskSerializer`
+
+- **serializeTask:** Adds id fields on populated assignee and createdBy.
 
 ### Utils — `validators`
 

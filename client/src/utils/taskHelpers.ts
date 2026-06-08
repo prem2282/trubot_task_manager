@@ -1,10 +1,45 @@
+import { Task, User } from '../types';
+
 export function getUserId(value: unknown): string {
-  if (typeof value === 'string') return value;
-  if (value && typeof value === 'object') {
-    const record = value as { id?: string; _id?: string };
-    return record.id ?? record._id?.toString() ?? '';
+  if (typeof value === 'string') return value.trim();
+  if (!value || typeof value !== 'object') return '';
+
+  const record = value as { id?: string; _id?: unknown };
+  if (typeof record.id === 'string' && record.id) return record.id;
+  if (typeof record._id === 'string') return record._id;
+  if (record._id && typeof record._id === 'object') {
+    const oid = record._id as { $oid?: string; toString?: () => string };
+    if (typeof oid.$oid === 'string') return oid.$oid;
+    if (typeof oid.toString === 'function') {
+      const id = oid.toString();
+      if (id && id !== '[object Object]') return id;
+    }
   }
   return '';
+}
+
+export function normalizeTaskUser(value: User | string): User | string {
+  const id = getUserId(value);
+  if (!id) return value;
+  if (typeof value === 'string') return id;
+  return { ...value, id };
+}
+
+export function normalizeTask(task: Task): Task {
+  return {
+    ...task,
+    assignee: normalizeTaskUser(task.assignee),
+    createdBy: normalizeTaskUser(task.createdBy),
+  };
+}
+
+/** Mirrors server task visibility for workspace members vs admins. */
+export function canViewTask(task: Task, userId: string, isAdmin: boolean): boolean {
+  if (isAdmin) return true;
+  if (!userId) return false;
+  return (
+    getUserId(task.createdBy) === userId || getUserId(task.assignee) === userId
+  );
 }
 
 export const ASSIGNEE_STATUSES = ['todo', 'in_progress', 'done'] as const;

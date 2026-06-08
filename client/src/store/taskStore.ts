@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../services/api';
 import { Task, TaskStatus } from '../types';
+import { normalizeTask } from '../utils/taskHelpers';
 
 interface TaskState {
   tasks: Task[];
@@ -45,7 +46,9 @@ export const useTaskStore = create<TaskState>((set, get) => ({
         },
       });
       set((state) => ({
-        tasks: append ? [...state.tasks, ...data.data] : data.data,
+        tasks: append
+          ? [...state.tasks, ...data.data.map(normalizeTask)]
+          : data.data.map(normalizeTask),
         meta: data.meta,
       }));
     } finally {
