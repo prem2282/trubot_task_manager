@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b tsconfig.app.json && vite build",
     "preview": "vite preview",
-    "lint": "tsc -b --noEmit",
+    "lint": "tsc -b tsconfig.app.json && tsc -b tsconfig.test.json",
     "test": "vitest",
     "test:run": "vitest run",
     "test:watch": "vitest --watch"

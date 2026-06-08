@@ -92,7 +92,7 @@ describe('WorkspaceMembersPage role-specific UI', () => {
 
       renderMembersPage('accountMemberWorkspaceAdmin');
 
-      const adminRow = (await screen.findByText(mockUser.name)).closest('div.rounded-lg')!;
+      const adminRow = (await screen.findByText(mockUser.name)).closest('div.rounded-lg') as HTMLElement;
       const roleSelect = within(adminRow).getByRole('combobox');
       const removeButton = within(adminRow).getByRole('button', { name: 'Remove' });
 
@@ -111,7 +111,7 @@ describe('WorkspaceMembersPage role-specific UI', () => {
       const user = userEvent.setup();
       renderMembersPage('accountMemberWorkspaceAdmin');
 
-      const adminRow = (await screen.findByText(mockUser.name)).closest('div.rounded-lg')!;
+      const adminRow = (await screen.findByText(mockUser.name)).closest('div.rounded-lg') as HTMLElement;
       const roleSelect = within(adminRow).getByRole('combobox');
 
       expect(roleSelect).not.toBeDisabled();

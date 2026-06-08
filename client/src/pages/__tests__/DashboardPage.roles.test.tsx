@@ -27,17 +27,11 @@ vi.mock('../../store/toastStore', () => ({
     selector({ showToast: vi.fn() }),
 }));
 
-const ownerId = mockUser.id;
-const otherUserId = mockUsers[1].id;
-
 function buildTask(overrides: Partial<Task> & Pick<Task, 'title' | 'createdBy' | 'assignee'>): Task {
   return {
-    _id: overrides._id ?? 'task-role-1',
-    title: overrides.title,
-    status: overrides.status ?? 'todo',
-    priority: overrides.priority ?? 'medium',
-    createdBy: overrides.createdBy,
-    assignee: overrides.assignee,
+    _id: 'task-role-1',
+    status: 'todo',
+    priority: 'medium',
     createdAt: '2026-06-01T00:00:00.000Z',
     updatedAt: '2026-06-01T00:00:00.000Z',
     ...overrides,

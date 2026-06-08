@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import Toast from '../Toast';
 import { useToastStore } from '../../store/toastStore';
 import { resetStores } from '../../test/test-utils';
