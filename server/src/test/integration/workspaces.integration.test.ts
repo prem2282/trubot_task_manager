@@ -114,6 +114,146 @@ describe('Workspaces API integration', () => {
     expect(res.body.message).toContain('At least one workspace admin');
   });
 
+  it('renames, archives, and deletes workspaces with workspace-admin rules', async () => {
+    const admin = await seedVerifiedUser(app, { email: 'ws-lifecycle@example.com' });
+
+    const createRes = await request(app)
+      .post('/api/v1/workspaces')
+      .set(withAuth(admin.accessToken))
+      .send({ name: 'Empty Space' });
+
+    expect(createRes.status).toBe(201);
+    const emptyWsId = createRes.body.data.id;
+
+    const engineeringRes = await request(app)
+      .post('/api/v1/workspaces')
+      .set(withAuth(admin.accessToken))
+      .send({ name: 'Engineering' });
+
+    expect(engineeringRes.status).toBe(201);
+    const engineeringWsId = engineeringRes.body.data.id;
+
+    const renameRes = await request(app)
+      .patch(`/api/v1/workspaces/${engineeringWsId}`)
+      .set(withAuth(admin.accessToken))
+      .send({ name: 'Engineering Team' });
+
+    expect(renameRes.status).toBe(200);
+    expect(renameRes.body.data.name).toBe('Engineering Team');
+
+    const switchRes = await request(app)
+      .post('/api/v1/auth/switch-context')
+      .set(withAuth(admin.accessToken))
+      .send({ accountId: admin.accountId, workspaceId: engineeringWsId });
+
+    expect(switchRes.status).toBe(200);
+    const engineeringToken = switchRes.body.data.accessToken;
+
+    const taskRes = await request(app)
+      .post('/api/v1/tasks')
+      .set(withAuth(engineeringToken))
+      .send({ title: 'Lifecycle task', assignee: admin.userId });
+
+    expect(taskRes.status).toBe(201);
+
+    const deleteNonEmptyRes = await request(app)
+      .delete(`/api/v1/workspaces/${engineeringWsId}`)
+      .set(withAuth(engineeringToken));
+
+    expect(deleteNonEmptyRes.status).toBe(400);
+    expect(deleteNonEmptyRes.body.message).toContain('Archive');
+
+    const archiveRes = await request(app)
+      .post(`/api/v1/workspaces/${engineeringWsId}/archive`)
+      .set(withAuth(engineeringToken));
+
+    expect(archiveRes.status).toBe(200);
+    expect(archiveRes.body.data.archived).toBe(true);
+
+    const listAfterArchive = await request(app)
+      .get('/api/v1/workspaces')
+      .set(withAuth(admin.accessToken));
+
+    expect(listAfterArchive.body.data.some((w: { id: string }) => w.id === engineeringWsId)).toBe(
+      false
+    );
+
+    const deleteEmptyRes = await request(app)
+      .delete(`/api/v1/workspaces/${emptyWsId}`)
+      .set(withAuth(admin.accessToken));
+
+    expect(deleteEmptyRes.status).toBe(200);
+    expect(deleteEmptyRes.body.data.deleted).toBe(true);
+  });
+
+  it('allows reusing a workspace name after the previous one was archived', async () => {
+    const admin = await seedVerifiedUser(app, { email: 'ws-reuse-name@example.com' });
+
+    const hrRes = await request(app)
+      .post('/api/v1/workspaces')
+      .set(withAuth(admin.accessToken))
+      .send({ name: 'HR' });
+
+    expect(hrRes.status).toBe(201);
+    const hrId = hrRes.body.data.id;
+
+    const switchRes = await request(app)
+      .post('/api/v1/auth/switch-context')
+      .set(withAuth(admin.accessToken))
+      .send({ accountId: admin.accountId, workspaceId: hrId });
+
+    const hrToken = switchRes.body.data.accessToken;
+
+    await request(app)
+      .post('/api/v1/tasks')
+      .set(withAuth(hrToken))
+      .send({ title: 'HR onboarding task', assignee: admin.userId });
+
+    const archiveRes = await request(app)
+      .post(`/api/v1/workspaces/${hrId}/archive`)
+      .set(withAuth(hrToken));
+
+    expect(archiveRes.status).toBe(200);
+
+    const recreateRes = await request(app)
+      .post('/api/v1/workspaces')
+      .set(withAuth(admin.accessToken))
+      .send({ name: 'HR' });
+
+    expect(recreateRes.status).toBe(201);
+    expect(recreateRes.body.data.name).toBe('HR');
+    expect(recreateRes.body.data.id).not.toBe(hrId);
+  });
+
+  it('blocks workspace members from renaming or deleting workspaces', async () => {
+    const admin = await seedVerifiedUser(app, { email: 'ws-guard@example.com' });
+    const member = await seedMemberInAccount(app, admin.accountId, admin.workspaceId, {
+      email: 'ws-guard-member@example.com',
+      accountRole: 'member',
+      workspaceRole: 'member',
+    });
+
+    const createRes = await request(app)
+      .post('/api/v1/workspaces')
+      .set(withAuth(admin.accessToken))
+      .send({ name: 'Member Cannot Touch' });
+
+    const wsId = createRes.body.data.id;
+
+    const renameRes = await request(app)
+      .patch(`/api/v1/workspaces/${wsId}`)
+      .set(withAuth(member.accessToken))
+      .send({ name: 'Hacked' });
+
+    expect(renameRes.status).toBe(403);
+
+    const deleteRes = await request(app)
+      .delete(`/api/v1/workspaces/${wsId}`)
+      .set(withAuth(member.accessToken));
+
+    expect(deleteRes.status).toBe(403);
+  });
+
   it('blocks workspace members from listing account members', async () => {
     const admin = await seedVerifiedUser(app, { email: 'acct-admin@example.com' });
     const member = await seedMemberInAccount(app, admin.accountId, admin.workspaceId, {

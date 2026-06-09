@@ -16,3 +16,12 @@ export function requireWorkspaceAdmin(req: Request, _res: Response, next: NextFu
   }
   next();
 }
+
+/** Workspace admin only — account admin without workspace admin role is not enough. */
+export function requireWorkspaceAdminOnly(req: Request, _res: Response, next: NextFunction) {
+  if (!req.user) return next(new AppError(401, 'Authentication required'));
+  if (req.user.workspaceRole !== 'admin') {
+    return next(new AppError(403, 'Workspace admin access required'));
+  }
+  next();
+}

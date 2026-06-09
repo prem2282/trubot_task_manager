@@ -1,5 +1,6 @@
 export { Account } from './Account';
-export { Workspace } from './Workspace';
+export { Workspace, ACTIVE_WORKSPACE_FILTER } from './Workspace';
+export type { WorkspaceStatus } from './Workspace';
 export { User } from './User';
 export { AccountMembership } from './AccountMembership';
 export { WorkspaceMembership } from './WorkspaceMembership';

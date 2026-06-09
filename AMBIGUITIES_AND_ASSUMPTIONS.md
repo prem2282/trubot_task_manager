@@ -50,6 +50,7 @@
 | Q26 | Workspace → account membership | Adding to workspace always creates/updates account membership | **Confirmed** |
 | Q27 | Multi-account users | One user can belong to many accounts/workspaces | **Confirmed** |
 | Q28 | Account / workspace switching | Account + workspace dropdowns in nav + switch-context API | **Confirmed** |
+| Q30 | Workspace lifecycle | Rename any active workspace; delete if empty; archive if has tasks; workspace admin only; archived hidden | **Confirmed** |
 
 ---
 

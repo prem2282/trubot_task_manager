@@ -11,5 +11,7 @@ Issues found while running or testing the project. Each bug has its own file in 
 | BUG-005 | Fixed | Page refresh logs user out (session not persisted) | 2026-06-08 | [BUG-005](./bugs/BUG-005-session-lost-on-page-refresh.md) |
 | BUG-006 | Fixed | Tab stops on info icons instead of next input | 2026-06-08 | [BUG-006](./bugs/BUG-006-infotip-tab-stops-form-flow.md) |
 | BUG-007 | Fixed | Assignee realtime task missing View; gone after refresh | 2026-06-08 | [BUG-007](./bugs/BUG-007-assignee-realtime-task-no-view-disappears-on-refresh.md) |
+| BUG-008 | Fixed | Workspace members page always showed default workspace name | 2026-06-08 | [BUG-008](./bugs/BUG-008-workspace-members-wrong-heading.md) |
+| BUG-009 | Fixed | Reusing archived workspace name caused 500 on create | 2026-06-08 | [BUG-009](./bugs/BUG-009-archived-workspace-name-reuse-500.md) |
 
 **Status values:** Open · In progress · Fixed · Won't fix

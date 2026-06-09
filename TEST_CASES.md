@@ -2,7 +2,7 @@
 
 One-line summary of every automated test. Use this to see what is covered without opening the test source files.
 
-**171 tests total** — 60 client unit · 88 server unit · 23 server integration
+**185 tests total** — 64 client unit · 94 server unit · 27 server integration
 
 Run everything: `./test.sh all`
 
@@ -75,9 +75,15 @@ Run everything: `./test.sh all`
 - Shows create workspace form for account admins.
 - Hides create workspace form for account members.
 - Shows Manage members for workspace admins who are account members.
+- Shows Rename and Archive for workspace admins on non-empty non-default workspaces.
+- Shows Delete (not Archive) for workspace admins on empty non-default workspaces.
+- Hides rename, delete, and archive for workspace members.
 
 ### `WorkspaceMembersPage` — role-specific UI
 
+- Shows the target workspace name and switches context when URL workspace differs from active workspace.
+- **Workspace admin:** Shows invite form and pending invites; hides add-existing-member section.
+- **Account admin:** Shows invite form and add-existing-member section.
 - **Workspace member (non-admin):** Shows read-only member list without management controls.
 - **Workspace admin:** Shows role dropdown and remove for manageable members.
 - **Workspace admin:** Disables remove and role change for the sole workspace admin.
@@ -214,6 +220,12 @@ Run everything: `./test.sh all`
 - **addWorkspaceMember:** Requires the target to be a verified account member.
 - **addWorkspaceMember:** Adds verified account members as workspace members.
 - **listAccountMembers:** Returns account roles and verification status.
+- **renameWorkspace:** Requires workspace admin on the target workspace.
+- **renameWorkspace:** Renames an active workspace.
+- **deleteWorkspace:** Rejects non-empty workspaces.
+- **deleteWorkspace:** Deletes an empty non-default workspace.
+- **archiveWorkspace:** Rejects empty workspaces.
+- **archiveWorkspace:** Archives a workspace with tasks.
 
 ### Service — `taskService` (core)
 
@@ -253,7 +265,7 @@ Run everything: `./test.sh all`
 
 ---
 
-## Server integration tests (23)
+## Server integration tests (27)
 
 HTTP + in-memory MongoDB. Email sending is mocked.
 
@@ -279,6 +291,9 @@ HTTP + in-memory MongoDB. Email sending is mocked.
 - Blocks account members from creating workspaces.
 - Adds account members to a workspace and manages roles (promote, demote, last-admin guard).
 - Prevents removing the last workspace admin.
+- Renames, archives, and deletes workspaces with workspace-admin rules.
+- Allows reusing a workspace name after the previous one was archived.
+- Blocks workspace members from renaming or deleting workspaces.
 - Blocks workspace members from listing account members.
 
 ### Tasks API
@@ -292,5 +307,6 @@ HTTP + in-memory MongoDB. Email sending is mocked.
 
 - Immediately adds verified users without creating a pending invite.
 - Creates pending invites for new users (with `emailSent`), and allows revoke/list.
+- Allows workspace admins to invite to their workspace and list pending invites.
 - Blocks account members from creating invites.
 - Accepts a pending invite and logs the user in.

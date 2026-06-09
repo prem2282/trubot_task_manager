@@ -15,7 +15,7 @@ For setup and commands, see [README.md](./README.md). For technical design, see 
 | **Stack** | Node.js, Express, TypeScript, MongoDB, React, Vite, Socket.io, Zustand, Tailwind |
 | **Run locally** | `./dev.sh start` — see [localrun.md](./localrun.md) |
 | **Local URLs** | UI: http://localhost:5173 · API: http://localhost:5000 · Swagger: http://localhost:5000/api-docs · Mailpit: http://localhost:8025 |
-| **Tests** | `./test.sh all` — 171 tests (see [TEST_CASES.md](./TEST_CASES.md)) |
+| **Tests** | `./test.sh all` — 185 tests (see [TEST_CASES.md](./TEST_CASES.md)) |
 
 ---
 
@@ -53,8 +53,9 @@ Registration always creates an isolated company — there is no shared public po
 ### 4. Workspaces and members
 
 1. **Workspaces** page — account admins can **create** additional workspaces (e.g. “Engineering”, “Sales”).
-2. **Manage members** on a workspace — admins can see who belongs to the workspace, **promote/demote** roles (admin ↔ member), and **remove** members.
-3. **Last-admin rule:** the sole workspace admin cannot be demoted or removed until another admin exists — prevents locking a workspace with no admin.
+2. **Workspace admins** can **rename** a workspace; **delete** it when empty (no tasks); or **archive** it when it has tasks. Archived and deleted workspaces are hidden from lists and the nav switcher. The default workspace and the last remaining active workspace cannot be deleted or archived.
+3. **Manage members** on a workspace — opening members switches your active workspace to match; workspace admins can **invite by email**, see **pending invites**, and manage roles; account admins can also **add existing account members** from a dropdown.
+4. **Last-admin rule:** the sole workspace admin cannot be demoted or removed until another admin exists — prevents locking a workspace with no admin.
 
 ### 5. Team and invitations
 
@@ -151,7 +152,7 @@ During planning, the following rules were adopted to make multi-tenancy concrete
 | S3 Live demo | ✅ | [trubotai-taskmanager.netlify.app](https://trubotai-taskmanager.netlify.app) · API on Render |
 | S4 Time tracking | ⚠️ | Not included as a separate time log file |
 | Bonus: TypeScript | ✅ | Full stack |
-| Bonus: Tests | ✅ | 171 tests — unit + integration |
+| Bonus: Tests | ✅ | 185 tests — unit + integration |
 | Bonus: Docker | ✅ | API in Docker (`server/Dockerfile`); MongoDB + Mailpit via `docker-compose.yml`; UI on host in dev |
 | Bonus: CI/CD | ✅ | GitHub Actions runs tests on push/PR; Netlify + Render auto-deploy `main` |
 | Bonus: Performance | ⚠️ | Pagination, indexes; no advanced tuning |
@@ -176,6 +177,7 @@ Part 5 describes a **single-team task app**. The project builds a **small SaaS-s
 | **Password reset flow** | No | Standard SaaS expectation; matches Part 3 security topics |
 | **JWT refresh token + httpOnly cookie** | JWT only (no refresh specified) | Part 3 covers refresh tokens; session survives page reload |
 | **Multiple workspaces per account** | No | Real teams split work; account admin can create workspaces |
+| **Workspace rename / delete / archive** | No | Workspace admins lifecycle workspaces; empty → delete, with tasks → archive |
 | **Workspace member management (add, remove, promote, demote)** | No | Admins must manage who sees which tasks |
 | **Last-admin guard** | No | Prevents accidental lockout with no workspace admin |
 | **Invite flow (email + link + instant add for verified users)** | No | Pending invites emailed via Resend/Mailpit; link also shown to admin |
@@ -186,7 +188,7 @@ Part 5 describes a **single-team task app**. The project builds a **small SaaS-s
 | **Assignee-only edit rules** | No | Assignee updates status, not arbitrary fields |
 | **Role-based task visibility for members** | No | Members see own + assigned tasks only; admins see all |
 | **Mailpit (local) + Resend (prod) email** | No | Verification and reset emails work end-to-end in dev and deploy |
-| **171 automated tests** | Bonus only | Assignment bonus; protects regressions on roles and invites |
+| **185 automated tests** | Bonus only | Assignment bonus; protects regressions on roles, invites, workspace lifecycle |
 | **TEST_CASES.md, server/client code docs** | Extra docs | Plain-language and module-level documentation |
 | **Filled Swagger spec (26 routes)** | B7 requires docs | Full API reference at `/api-docs` |
 | **`dev.sh` one-command local stack** | No | Docker stack + UI; see [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) |
@@ -233,10 +235,10 @@ Health · Authentication · Workspaces · Tasks · Invites · Members · Users �
 
 | Suite | Count | Covers |
 |-------|------:|--------|
-| Client unit | 47 | Components, pages, role-specific UI |
-| Server unit | 86 | Services, middleware, validators |
-| Server integration | 23 | HTTP flows with in-memory MongoDB |
-| **Total** | **171** | See [TEST_CASES.md](./TEST_CASES.md) for every test name |
+| Client unit | 64 | Components, pages, role-specific UI |
+| Server unit | 94 | Services, middleware, validators |
+| Server integration | 27 | HTTP flows with in-memory MongoDB |
+| **Total** | **185** | See [TEST_CASES.md](./TEST_CASES.md) for every test name |
 
 ```bash
 ./test.sh all
@@ -253,7 +255,7 @@ Health · Authentication · Workspaces · Tasks · Invites · Members · Users �
 | [server/DEPLOYMENT.md](./server/DEPLOYMENT.md) | API Docker image, Render deploy |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, data model, diagrams |
 | [AMBIGUITIES_AND_ASSUMPTIONS.md](./AMBIGUITIES_AND_ASSUMPTIONS.md) | Scope decisions and rationale |
-| [TEST_CASES.md](./TEST_CASES.md) | One-line list of all 171 tests |
+| [TEST_CASES.md](./TEST_CASES.md) | One-line list of all 185 tests |
 | [server/documentation/](./server/documentation/) | Backend module reference |
 | [client/documentation/](./client/documentation/) | Frontend module reference |
 | [bugtracker.md](./bugtracker.md) | Known issues tracked during development |

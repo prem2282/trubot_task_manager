@@ -1,9 +1,11 @@
 import { env } from '../config/env';
 import {
   Account,
+  AccountMembership,
   Invitation,
   User,
   Workspace,
+  WorkspaceMembership,
 } from '../models';
 import { AppError } from '../utils/errors';
 import {
@@ -96,6 +98,33 @@ async function createAuthResultForUser(
   };
 }
 
+export async function assertCanInviteToWorkspace(
+  userId: string,
+  accountId: string,
+  workspaceId: string
+) {
+  const accountMembership = await AccountMembership.findOne({
+    userId,
+    accountId,
+    status: 'verified',
+  });
+  if (!accountMembership) {
+    throw new AppError(403, 'No access to this account');
+  }
+
+  if (accountMembership.accountRole === 'admin') return;
+
+  const workspaceMembership = await WorkspaceMembership.findOne({
+    userId,
+    workspaceId,
+    status: 'verified',
+    workspaceRole: 'admin',
+  });
+  if (!workspaceMembership) {
+    throw new AppError(403, 'Not authorized to invite to this workspace');
+  }
+}
+
 export async function createInvite(
   invitedBy: string,
   accountId: string,
@@ -103,8 +132,14 @@ export async function createInvite(
   email: string,
   name?: string
 ) {
+  await assertCanInviteToWorkspace(invitedBy, accountId, workspaceId);
+
   const normalizedEmail = email.toLowerCase().trim();
-  const workspace = await Workspace.findOne({ _id: workspaceId, accountId });
+  const workspace = await Workspace.findOne({
+    _id: workspaceId,
+    accountId,
+    status: { $ne: 'archived' },
+  });
   if (!workspace) throw new AppError(404, 'Workspace not found');
 
   let user = await User.findOne({ email: normalizedEmail });
@@ -195,15 +230,47 @@ export async function createInvite(
   };
 }
 
-export async function listInvites(accountId: string) {
-  return Invitation.find({ accountId, status: 'pending' })
-    .sort({ createdAt: -1 })
-    .select('-tokenHash');
+export async function listInvites(
+  accountId: string,
+  requesterUserId: string,
+  workspaceId?: string
+) {
+  const accountMembership = await AccountMembership.findOne({
+    userId: requesterUserId,
+    accountId,
+    status: 'verified',
+  });
+  if (!accountMembership) {
+    throw new AppError(403, 'No access to this account');
+  }
+
+  const filter: { accountId: string; status: 'pending'; workspaceId?: string } = {
+    accountId,
+    status: 'pending',
+  };
+
+  if (workspaceId) {
+    await assertCanInviteToWorkspace(requesterUserId, accountId, workspaceId);
+    filter.workspaceId = workspaceId;
+  } else if (accountMembership.accountRole !== 'admin') {
+    throw new AppError(403, 'Account admin access required');
+  }
+
+  return Invitation.find(filter).sort({ createdAt: -1 }).select('-tokenHash');
 }
 
-export async function revokeInvite(inviteId: string, accountId: string) {
+export async function revokeInvite(
+  inviteId: string,
+  accountId: string,
+  requesterUserId: string
+) {
   const invite = await Invitation.findOne({ _id: inviteId, accountId, status: 'pending' });
   if (!invite) throw new AppError(404, 'Invitation not found');
+  await assertCanInviteToWorkspace(
+    requesterUserId,
+    accountId,
+    invite.workspaceId.toString()
+  );
   invite.status = 'revoked';
   await invite.save();
 }

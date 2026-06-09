@@ -1,6 +1,7 @@
 import mongoose, { Types } from 'mongoose';
 import {
   AccountMembership,
+  ACTIVE_WORKSPACE_FILTER,
   Workspace,
   WorkspaceMembership,
 } from '../models';
@@ -190,7 +191,7 @@ export async function getUserMemberships(userId: string): Promise<MembershipAcco
       status: 'verified',
     }).populate({
       path: 'workspaceId',
-      match: { accountId: account._id },
+      match: { accountId: account._id, ...ACTIVE_WORKSPACE_FILTER },
     });
 
     const workspaces = workspaceMemberships
@@ -234,7 +235,11 @@ export async function validateContextAccess(
   });
   if (!accountMembership) throw new AppError(403, 'No access to this account');
 
-  const workspace = await Workspace.findOne({ _id: workspaceId, accountId });
+  const workspace = await Workspace.findOne({
+    _id: workspaceId,
+    accountId,
+    ...ACTIVE_WORKSPACE_FILTER,
+  });
   if (!workspace) throw new AppError(404, 'Workspace not found in account');
 
   const workspaceMembership = await WorkspaceMembership.findOne({

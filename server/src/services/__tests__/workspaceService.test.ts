@@ -2,10 +2,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Types } from 'mongoose';
 import {
   addWorkspaceMember,
+  archiveWorkspace,
   createWorkspace,
+  deleteWorkspace,
   listAccountMembers,
   listWorkspaceMembers,
   listWorkspaces,
+  renameWorkspace,
 } from '../workspaceService';
 
 const userId = '507f1f77bcf86cd799439011';
@@ -23,19 +26,34 @@ vi.mock('../../models', () => ({
     findOne: vi.fn(),
     find: vi.fn(),
   },
+  ACTIVE_WORKSPACE_FILTER: { status: { $ne: 'archived' } },
   WorkspaceMembership: {
     find: vi.fn(),
+    findOne: vi.fn(),
+    deleteMany: vi.fn(),
   },
   Workspace: {
     findOne: vi.fn(),
     create: vi.fn(),
+    countDocuments: vi.fn(),
+    deleteOne: vi.fn(),
+  },
+  Task: {
+    aggregate: vi.fn(),
+    countDocuments: vi.fn(),
   },
   User: {
     findById: vi.fn(),
   },
 }));
 
-import { AccountMembership, WorkspaceMembership, Workspace, User } from '../../models';
+import {
+  AccountMembership,
+  WorkspaceMembership,
+  Workspace,
+  Task,
+  User,
+} from '../../models';
 import { addToWorkspace } from '../membershipService';
 
 describe('workspaceService', () => {
@@ -62,6 +80,7 @@ describe('workspaceService', () => {
           },
         ]),
       } as never);
+      vi.mocked(Task.aggregate).mockResolvedValue([]);
 
       const workspaces = await listWorkspaces(userId, accountId);
 
@@ -71,8 +90,109 @@ describe('workspaceService', () => {
           name: 'Default Workspace',
           isDefault: true,
           workspaceRole: 'admin',
+          taskCount: 0,
         },
       ]);
+    });
+  });
+
+  describe('renameWorkspace', () => {
+    it('requires workspace admin on the target workspace', async () => {
+      vi.mocked(WorkspaceMembership.findOne).mockResolvedValue(null);
+
+      await expect(
+        renameWorkspace(workspaceId, accountId, userId, 'Renamed')
+      ).rejects.toMatchObject({ statusCode: 403 });
+    });
+
+    it('renames an active workspace', async () => {
+      const save = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(WorkspaceMembership.findOne).mockResolvedValue({ workspaceRole: 'admin' } as never);
+      vi.mocked(Workspace.findOne)
+        .mockResolvedValueOnce({
+          _id: new Types.ObjectId(workspaceId),
+          name: 'Old',
+          isDefault: false,
+          save,
+        } as never)
+        .mockResolvedValueOnce(null);
+      vi.mocked(Task.countDocuments).mockResolvedValue(3);
+
+      const result = await renameWorkspace(workspaceId, accountId, userId, 'Renamed');
+
+      expect(save).toHaveBeenCalled();
+      expect(result).toMatchObject({ name: 'Renamed', taskCount: 3 });
+    });
+  });
+
+  describe('deleteWorkspace', () => {
+    it('rejects non-empty workspaces', async () => {
+      vi.mocked(WorkspaceMembership.findOne).mockResolvedValue({ workspaceRole: 'admin' } as never);
+      vi.mocked(Workspace.findOne).mockResolvedValue({
+        _id: new Types.ObjectId(workspaceId),
+        isDefault: false,
+      } as never);
+      vi.mocked(Workspace.countDocuments).mockResolvedValue(2);
+      vi.mocked(Task.countDocuments).mockResolvedValue(1);
+
+      await expect(deleteWorkspace(workspaceId, accountId, userId)).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'Workspace has tasks. Archive it instead.',
+      });
+    });
+
+    it('deletes an empty non-default workspace', async () => {
+      vi.mocked(WorkspaceMembership.findOne).mockResolvedValue({ workspaceRole: 'admin' } as never);
+      vi.mocked(Workspace.findOne).mockResolvedValue({
+        _id: new Types.ObjectId(workspaceId),
+        isDefault: false,
+      } as never);
+      vi.mocked(Workspace.countDocuments).mockResolvedValue(2);
+      vi.mocked(Task.countDocuments).mockResolvedValue(0);
+      vi.mocked(WorkspaceMembership.deleteMany).mockResolvedValue({} as never);
+      vi.mocked(Workspace.deleteOne).mockResolvedValue({} as never);
+
+      const result = await deleteWorkspace(workspaceId, accountId, userId);
+
+      expect(result).toEqual({ id: workspaceId, deleted: true });
+      expect(WorkspaceMembership.deleteMany).toHaveBeenCalled();
+      expect(Workspace.deleteOne).toHaveBeenCalled();
+    });
+  });
+
+  describe('archiveWorkspace', () => {
+    it('rejects empty workspaces', async () => {
+      vi.mocked(WorkspaceMembership.findOne).mockResolvedValue({ workspaceRole: 'admin' } as never);
+      vi.mocked(Workspace.findOne).mockResolvedValue({
+        _id: new Types.ObjectId(workspaceId),
+        isDefault: false,
+      } as never);
+      vi.mocked(Workspace.countDocuments).mockResolvedValue(2);
+      vi.mocked(Task.countDocuments).mockResolvedValue(0);
+
+      await expect(archiveWorkspace(workspaceId, accountId, userId)).rejects.toMatchObject({
+        statusCode: 400,
+        message: 'Workspace is empty. Delete it instead.',
+      });
+    });
+
+    it('archives a workspace with tasks', async () => {
+      const save = vi.fn().mockResolvedValue(undefined);
+      vi.mocked(WorkspaceMembership.findOne).mockResolvedValue({ workspaceRole: 'admin' } as never);
+      vi.mocked(Workspace.findOne).mockResolvedValue({
+        _id: new Types.ObjectId(workspaceId),
+        name: 'Engineering',
+        isDefault: false,
+        status: 'active',
+        save,
+      } as never);
+      vi.mocked(Workspace.countDocuments).mockResolvedValue(2);
+      vi.mocked(Task.countDocuments).mockResolvedValue(4);
+
+      const result = await archiveWorkspace(workspaceId, accountId, userId);
+
+      expect(save).toHaveBeenCalled();
+      expect(result).toMatchObject({ archived: true, name: 'Engineering' });
     });
   });
 

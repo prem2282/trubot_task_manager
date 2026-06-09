@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import * as inviteController from '../controllers/inviteController';
-import * as workspaceController from '../controllers/workspaceController';
 import { authenticate } from '../middleware/authenticate';
-import { requireAccountAdmin } from '../middleware/authorize';
 import { validate } from '../middleware/validate';
 import { acceptInviteSchema, createInviteSchema } from '../utils/validators';
 
@@ -16,8 +14,8 @@ router.post(
 );
 
 router.use(authenticate);
-router.post('/', requireAccountAdmin, validate(createInviteSchema), inviteController.createInvite);
-router.get('/', requireAccountAdmin, inviteController.listInvites);
-router.delete('/:id', requireAccountAdmin, inviteController.revokeInvite);
+router.post('/', validate(createInviteSchema), inviteController.createInvite);
+router.get('/', inviteController.listInvites);
+router.delete('/:id', inviteController.revokeInvite);
 
 export default router;

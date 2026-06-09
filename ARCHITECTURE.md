@@ -173,7 +173,7 @@ flowchart TB
 | **Backend** | Render | Docker Web Service from `server/Dockerfile`; Express + Socket.io on one process |
 | **Database** | MongoDB Atlas | Managed cluster; connection string in Render env (`MONGODB_URI`) |
 | **Email** | Resend | Outbound mail from the Render API (`EMAIL_PROVIDER=resend`); not hosted on Render |
-| **CI** | GitHub Actions | `.github/workflows/ci.yml` — lint + 171 tests on push/PR to `main` |
+| **CI** | GitHub Actions | `.github/workflows/ci.yml` — lint + 185 tests on push/PR to `main` |
 
 **Key cross-origin settings:** Netlify sets `VITE_API_URL` and `VITE_WS_URL` to the Render host. Render sets `CLIENT_URL` to the Netlify URL for invite/reset links, CORS, and `sameSite: none` refresh cookies.
 
@@ -218,6 +218,7 @@ Local development uses the same app shape with **Docker Compose** (API + MongoDB
 | Email (auth flows) | **Mailpit (local) + Resend (production)** | Gmail SMTP, SendGrid — Mailpit is zero-cost for dev; Resend free tier for deploy |
 | Workspace invite delivery | **Email + copyable link** | Invite emailed to new/unverified users; link also shown to admin |
 | Workspace switcher | **Full UI + API** | List/switch/create workspaces; manage members per workspace |
+| Workspace lifecycle | **Rename / delete / archive** | Workspace admin only; empty → hard delete; non-empty → archive (hidden from UI) |
 
 ---
 
@@ -339,13 +340,15 @@ Workspace {
   accountId:  ObjectId     // ref Account, required, indexed
   name:       string       // default: "Default Workspace"
   isDefault:  boolean      // true for auto-created workspace; one per account
+  status:     'active' | 'archived'   // archived workspaces hidden from lists/switcher
+  archivedAt: Date         // set when status becomes archived
   createdAt:  Date
   updatedAt:  Date
 }
 
 // Indexes
 { accountId: 1, isDefault: 1 }
-{ accountId: 1, name: 1 }    unique (workspace names unique within account)
+{ accountId: 1, name: 1 }    unique partial where status is active (archived names reusable)
 ```
 
 ### 5.5 User Schema
@@ -655,8 +658,11 @@ Login defaults to the account created at registration (where user is admin). Use
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/v1/workspaces` | Yes | Workspaces in current account where user is verified member |
+| GET | `/api/v1/workspaces` | Yes | Active workspaces in current account (excludes archived); includes `taskCount` |
 | POST | `/api/v1/workspaces` | Account admin | Create workspace; creator becomes workspace admin |
+| PATCH | `/api/v1/workspaces/:id` | Workspace admin (target) | Rename workspace |
+| DELETE | `/api/v1/workspaces/:id` | Workspace admin (target) | Delete empty workspace (not default, not last active) |
+| POST | `/api/v1/workspaces/:id/archive` | Workspace admin (target) | Archive non-empty workspace (hidden from UI; tasks retained) |
 | GET | `/api/v1/workspaces/:id/members` | Workspace member | List verified members of workspace |
 | POST | `/api/v1/workspaces/:id/members` | Account admin or workspace admin | Add user to workspace (`membershipService.addToWorkspace`) |
 | DELETE | `/api/v1/workspaces/:id/members/:userId` | Account admin or workspace admin | Remove user from workspace (retains account membership); blocked for last admin |
@@ -666,10 +672,10 @@ Login defaults to the account created at registration (where user is admin). Use
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| POST | `/api/v1/invites` | Admin | Invite by email — pending link OR immediate add (see 6.2) |
-| GET | `/api/v1/invites` | Admin | List pending invitations (unverified users only) |
+| POST | `/api/v1/invites` | Account or workspace admin (target workspace) | Invite by email — pending link OR immediate add (see 6.2) |
+| GET | `/api/v1/invites` | Account admin (all) or workspace admin (`?workspaceId=`) | List pending invitations |
 | GET | `/api/v1/members` | Admin | List all account members (verified + unverified) |
-| DELETE | `/api/v1/invites/:id` | Admin | Revoke pending invite |
+| DELETE | `/api/v1/invites/:id` | Account or workspace admin (invite workspace) | Revoke pending invite |
 | GET | `/api/v1/invites/:token/validate` | No | Validate token for accept page |
 | POST | `/api/v1/invites/:token/accept` | No | Set password; activate unverified member |
 

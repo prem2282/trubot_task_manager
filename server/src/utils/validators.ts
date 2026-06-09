@@ -71,6 +71,10 @@ export const createWorkspaceSchema = z.object({
   name: z.string().min(2).max(200),
 });
 
+export const renameWorkspaceSchema = z.object({
+  name: z.string().trim().min(2).max(200),
+});
+
 export const addMemberSchema = z.object({
   userId: z.string().length(24),
 });

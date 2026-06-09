@@ -158,6 +158,7 @@ These are **Zod schemas** — rules that describe valid request shapes. Used by 
 | `createInviteSchema` | POST /invites | email required; optional name and workspaceId |
 | `acceptInviteSchema` | POST /invites/:token/accept | name + password min 8 |
 | `createWorkspaceSchema` | POST /workspaces | name 2–200 chars |
+| `renameWorkspaceSchema` | PATCH /workspaces/:id | name 2–200 chars |
 | `addMemberSchema` | POST /workspaces/:id/members | userId must be valid ObjectId |
 | `updateMemberRoleSchema` | PATCH /workspaces/:id/members/:userId | `workspaceRole` must be `admin` or `member` |
 | `createTaskSchema` | POST /tasks | title required; optional status, priority, assignee, dueDate |

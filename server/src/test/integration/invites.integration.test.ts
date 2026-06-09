@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import type { Express } from 'express';
 import { clearDatabase, closeIntegrationApp, getIntegrationApp } from '../integrationApp';
-import { seedVerifiedUser, withAuth } from '../integrationHelpers';
+import { seedMemberInAccount, seedVerifiedUser, withAuth } from '../integrationHelpers';
 
 describe('Invites API integration', () => {
   let app: Express;
@@ -80,6 +80,46 @@ describe('Invites API integration', () => {
 
     const afterRevoke = await request(app).get('/api/v1/invites').set(withAuth(admin.accessToken));
     expect(afterRevoke.body.data).toHaveLength(0);
+  });
+
+  it('allows workspace admins to invite to their workspace', async () => {
+    const admin = await seedVerifiedUser(app, {
+      email: 'acct-admin-invite@example.com',
+      accountRole: 'admin',
+    });
+
+    const createWsRes = await request(app)
+      .post('/api/v1/workspaces')
+      .set(withAuth(admin.accessToken))
+      .send({ name: 'Ops' });
+
+    const opsWorkspaceId = createWsRes.body.data.id;
+
+    const wsAdmin = await seedMemberInAccount(app, admin.accountId, opsWorkspaceId, {
+      email: 'ws-admin-invite@example.com',
+      accountRole: 'member',
+      workspaceRole: 'admin',
+    });
+
+    const inviteRes = await request(app)
+      .post('/api/v1/invites')
+      .set(withAuth(wsAdmin.accessToken))
+      .send({
+        email: 'new-from-ws-admin@example.com',
+        workspaceId: opsWorkspaceId,
+      });
+
+    expect(inviteRes.status).toBe(201);
+    expect(inviteRes.body.data.type).toBe('pending');
+
+    const listRes = await request(app)
+      .get('/api/v1/invites')
+      .query({ workspaceId: opsWorkspaceId })
+      .set(withAuth(wsAdmin.accessToken));
+
+    expect(listRes.status).toBe(200);
+    expect(listRes.body.data).toHaveLength(1);
+    expect(listRes.body.data[0].email).toBe('new-from-ws-admin@example.com');
   });
 
   it('blocks account members from creating invites', async () => {

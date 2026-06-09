@@ -43,6 +43,9 @@ All routes require `authenticate`.
 |--------|------|------------------|---------|
 | GET | `/` | — | listWorkspaces |
 | POST | `/` | requireAccountAdmin, validate | createWorkspace |
+| PATCH | `/:id` | validate | renameWorkspace |
+| DELETE | `/:id` | — | deleteWorkspace |
+| POST | `/:id/archive` | — | archiveWorkspace |
 | GET | `/:id/members` | — | listMembers |
 | POST | `/:id/members` | requireWorkspaceAdmin, validate | addMember |
 | PATCH | `/:id/members/:userId` | requireWorkspaceAdmin, validate | updateMemberRole |
@@ -63,9 +66,9 @@ All routes require `authenticate`.
 
 | Method | Path | Middleware | Handler |
 |--------|------|------------|---------|
-| POST | `/` | requireAccountAdmin, validate | createInvite |
-| GET | `/` | requireAccountAdmin | listInvites |
-| DELETE | `/:id` | requireAccountAdmin | revokeInvite |
+| POST | `/` | validate | createInvite — account or workspace admin on target workspace |
+| GET | `/` | — | listInvites — account admin (all) or `?workspaceId=` for workspace admin |
+| DELETE | `/:id` | — | revokeInvite — account or workspace admin on invite workspace |
 
 ---
 

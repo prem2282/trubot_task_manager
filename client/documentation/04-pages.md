@@ -128,11 +128,21 @@ Full-screen views in `client/src/pages/`. Each page corresponds to a route.
 
 **Account admin only feature:** "Create workspace" form at top (with info tip).
 
-**Each row:** Workspace name, default badge, **· current** marker for active workspace, role, link to **Manage members** or **View members** (non-admins see view-only link).
+**Each row:** Workspace name, default badge, **· current** marker for active workspace, role, task count (when > 0), link to **Manage members** or **View members** (non-admins see view-only link).
+
+**Workspace admin actions (per row):**
+- **Rename** — inline form → `PATCH /workspaces/:id`
+- **Delete** — empty, non-default workspaces only → `DELETE /workspaces/:id`
+- **Archive** — non-empty, non-default workspaces only → `POST /workspaces/:id/archive` (hidden from all lists after archive)
+
+If delete/archive targets the **current** workspace, context switches to another workspace automatically.
 
 **API calls:**
 - `GET /workspaces` on load (refetch when account changes)
 - `POST /workspaces` on create
+- `PATCH /workspaces/:id` on rename
+- `DELETE /workspaces/:id` on delete
+- `POST /workspaces/:id/archive` on archive
 
 ---
 
@@ -140,11 +150,13 @@ Full-screen views in `client/src/pages/`. Each page corresponds to a route.
 
 **Route:** `/settings/workspaces/:id/members` (protected)
 
-**What it shows:** Members of one workspace with add/remove/role controls (heading includes workspace name).
+**What it shows:** Members of one workspace with invite, add, remove, and role controls (heading includes workspace name).
 
-**Workspace sync:** If nav workspace ≠ URL `:id`, redirects to `/settings/workspaces/{current}/members` so switching workspace in TopNav always shows the correct list.
+**Workspace sync:** If nav workspace ≠ URL `:id`, calls `switchContext` for the URL workspace and reconnects the socket so the heading, member list, and nav switcher all match the workspace being managed.
 
-**Add member (if admin):** Dropdown of verified account members not yet in workspace → `POST /workspaces/:id/members`.
+**Invite new member (workspace admin or account admin):** Email + optional name → `POST /invites` with `workspaceId` from the URL. Shows pending invites for this workspace (`GET /invites?workspaceId=`) with revoke. Same flow as Team page but scoped to the workspace you are managing.
+
+**Add existing account member (account admin only):** Dropdown of verified account members not yet in workspace → `POST /workspaces/:id/members`.
 
 **Change role (if admin):** Per-member dropdown **Admin** / **Member** → `PATCH /workspaces/:id/members/:userId` with `{ workspaceRole }`.
 

@@ -33,4 +33,11 @@ See `bugtracker.md` for runtime bugs.
 - [x] **Promote/demote** — workspace admins (or account admins) can change member role between admin and member
 - [x] **Last admin guard** — remove and demote disabled when only one workspace admin remains (UI + API)
 
+## Workspace lifecycle — completed 2026-06-08
+
+- [x] **Rename** — workspace admin can rename any active workspace
+- [x] **Delete** — empty, non-default workspaces (not last active)
+- [x] **Archive** — non-empty workspaces hidden from UI; tasks retained
+- [x] **Manage members context** — opening members switches active workspace to match URL (see BUG-008)
+
 New feature work can be added below. See [AUDIT-TODO.md](./AUDIT-TODO.md) for systematic audit fixes (completed 2026-06-08).

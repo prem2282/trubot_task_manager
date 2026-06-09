@@ -21,7 +21,13 @@ export async function createInvite(req: Request, res: Response, next: NextFuncti
 
 export async function listInvites(req: Request, res: Response, next: NextFunction) {
   try {
-    const data = await inviteService.listInvites(req.user!.accountId);
+    const workspaceId =
+      typeof req.query.workspaceId === 'string' ? req.query.workspaceId : undefined;
+    const data = await inviteService.listInvites(
+      req.user!.accountId,
+      req.user!.userId,
+      workspaceId
+    );
     res.json({ success: true, data });
   } catch (e) {
     next(e);
@@ -30,7 +36,11 @@ export async function listInvites(req: Request, res: Response, next: NextFunctio
 
 export async function revokeInvite(req: Request, res: Response, next: NextFunction) {
   try {
-    await inviteService.revokeInvite(param(req.params.id, 'id'), req.user!.accountId);
+    await inviteService.revokeInvite(
+      param(req.params.id, 'id'),
+      req.user!.accountId,
+      req.user!.userId
+    );
     res.json({ success: true, message: 'Invitation revoked' });
   } catch (e) {
     next(e);

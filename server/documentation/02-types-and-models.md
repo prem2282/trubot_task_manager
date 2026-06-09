@@ -92,10 +92,14 @@ Each model is a Mongoose schema + model. Models define how data is stored in Mon
 | Field | Type | Notes |
 |-------|------|-------|
 | `accountId` | ObjectId | Parent account |
-| `name` | string | Unique within account |
+| `name` | string | Unique among active workspaces in account |
 | `isDefault` | boolean | True for auto-created workspace on register |
+| `status` | `'active' \| 'archived'` | Archived workspaces hidden from UI |
+| `archivedAt` | Date | Set when archived |
 
-**Indexes:** Unique `(accountId, name)`; `(accountId, isDefault)`.
+**Indexes:** Unique partial `(accountId, name)` where `status !== 'archived'` (reuse names after archive); `(accountId, isDefault)`.
+
+**Lifecycle:** Workspace admins may rename; delete when empty; archive when tasks exist. Default and last active workspace cannot be deleted or archived.
 
 **Exports:** `IWorkspace`, `Workspace`.
 

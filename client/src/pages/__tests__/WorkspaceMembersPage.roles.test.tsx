@@ -8,6 +8,7 @@ import { resetStores } from '../../test/test-utils';
 import { authStateForRole } from '../../test/roleFixtures';
 import { mockUser } from '../../test/fixtures';
 import { api } from '../../services/api';
+import { mockMemberships } from '../../test/fixtures';
 
 vi.mock('../../services/api', () => ({
   api: {
@@ -21,6 +22,10 @@ vi.mock('../../services/api', () => ({
 vi.mock('../../store/toastStore', () => ({
   useToastStore: (selector: (s: { showToast: () => void }) => unknown) =>
     selector({ showToast: vi.fn() }),
+}));
+
+vi.mock('../../services/socket', () => ({
+  reconnectSocket: vi.fn(),
 }));
 
 const members = [
@@ -51,10 +56,41 @@ function renderMembersPage(role: Parameters<typeof authStateForRole>[0]) {
 }
 
 describe('WorkspaceMembersPage role-specific UI', () => {
+  it('shows the target workspace name and switches context when URL workspace differs', async () => {
+    const switchContext = vi.fn().mockImplementation(async () => {
+      useAuthStore.setState({
+        workspace: { id: 'ws2', name: 'Secondary' },
+      });
+    });
+
+    useAuthStore.setState({
+      ...authStateForRole('accountAdminWorkspaceAdmin'),
+      memberships: mockMemberships,
+      workspace: { id: 'ws1', name: 'Default Workspace' },
+      switchContext,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/settings/workspaces/ws2/members']}>
+        <Routes>
+          <Route path="/settings/workspaces/:id/members" element={<WorkspaceMembersPage />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    expect(await screen.findByText('Secondary — members')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(switchContext).toHaveBeenCalledWith('acc1', 'ws2');
+    });
+  });
+
   beforeEach(() => {
     resetStores();
     vi.clearAllMocks();
     vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url.includes('/invites')) {
+        return Promise.resolve({ data: { data: [] } });
+      }
       if (url.includes('/members') && !url.includes('/workspaces/')) {
         return Promise.resolve({ data: { data: [] } });
       }
@@ -74,6 +110,14 @@ describe('WorkspaceMembersPage role-specific UI', () => {
   });
 
   describe('workspace admin', () => {
+    it('shows invite form and pending invites section', async () => {
+      renderMembersPage('accountMemberWorkspaceAdmin');
+
+      expect(await screen.findByText('Invite new member')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Send invite' })).toBeInTheDocument();
+      expect(screen.queryByText('Add existing account member')).not.toBeInTheDocument();
+    });
+
     it('shows role dropdown and remove for manageable members', async () => {
       renderMembersPage('accountMemberWorkspaceAdmin');
 
@@ -129,7 +173,8 @@ describe('WorkspaceMembersPage role-specific UI', () => {
     it('can still manage members via account admin privilege', async () => {
       renderMembersPage('accountAdminWorkspaceMember');
 
-      expect(await screen.findByRole('button', { name: 'Add' })).toBeInTheDocument();
+      expect(await screen.findByText('Invite new member')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
       expect(screen.getAllByRole('combobox').length).toBeGreaterThan(0);
     });
   });

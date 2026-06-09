@@ -54,13 +54,14 @@ vi.mock('../../models', () => ({
   RefreshToken: { create: vi.fn() },
 }));
 
-import { User, Workspace, Invitation, Account } from '../../models';
+import { User, Workspace, Invitation, Account, AccountMembership } from '../../models';
 import { addToWorkspace } from '../membershipService';
 import { sendEmail } from '../emailService';
 
 describe('inviteService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(AccountMembership.findOne).mockResolvedValue({ accountRole: 'admin' } as never);
   });
 
   describe('createInvite', () => {
@@ -197,10 +198,14 @@ describe('inviteService', () => {
 
   describe('revokeInvite', () => {
     it('revokes pending invitations for the account', async () => {
-      const invite = { status: 'pending', save: vi.fn() };
+      const invite = {
+        status: 'pending',
+        workspaceId: new Types.ObjectId(workspaceId),
+        save: vi.fn(),
+      };
       vi.mocked(Invitation.findOne).mockResolvedValue(invite as never);
 
-      await revokeInvite(inviteId, accountId);
+      await revokeInvite(inviteId, accountId, userId);
 
       expect(invite.status).toBe('revoked');
       expect(invite.save).toHaveBeenCalled();
@@ -209,7 +214,7 @@ describe('inviteService', () => {
     it('returns 404 when invite is missing', async () => {
       vi.mocked(Invitation.findOne).mockResolvedValue(null);
 
-      await expect(revokeInvite(inviteId, accountId)).rejects.toMatchObject({
+      await expect(revokeInvite(inviteId, accountId, userId)).rejects.toMatchObject({
         statusCode: 404,
       });
     });
@@ -223,7 +228,7 @@ describe('inviteService', () => {
       };
       vi.mocked(Invitation.find).mockReturnValue(chain as never);
 
-      const invites = await listInvites(accountId);
+      const invites = await listInvites(accountId, userId);
 
       expect(invites).toHaveLength(1);
       expect(chain.select).toHaveBeenCalledWith('-tokenHash');

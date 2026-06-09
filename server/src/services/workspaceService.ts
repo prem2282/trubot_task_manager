@@ -1,7 +1,49 @@
 import { Types } from 'mongoose';
-import { AccountMembership, Workspace, WorkspaceMembership, User } from '../models';
+import {
+  AccountMembership,
+  ACTIVE_WORKSPACE_FILTER,
+  Task,
+  Workspace,
+  WorkspaceMembership,
+  User,
+} from '../models';
 import { AppError } from '../utils/errors';
 import { addToWorkspace, updateWorkspaceMemberRole as changeWorkspaceMemberRole } from './membershipService';
+
+function isDuplicateKeyError(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code: number }).code === 11000
+  );
+}
+
+async function assertWorkspaceAdminForTarget(workspaceId: string, userId: string) {
+  const membership = await WorkspaceMembership.findOne({
+    workspaceId,
+    userId,
+    status: 'verified',
+    workspaceRole: 'admin',
+  });
+  if (!membership) {
+    throw new AppError(403, 'Workspace admin access required');
+  }
+}
+
+async function getActiveWorkspace(workspaceId: string, accountId: string) {
+  const workspace = await Workspace.findOne({
+    _id: workspaceId,
+    accountId,
+    ...ACTIVE_WORKSPACE_FILTER,
+  });
+  if (!workspace) throw new AppError(404, 'Workspace not found');
+  return workspace;
+}
+
+async function countActiveWorkspacesInAccount(accountId: string) {
+  return Workspace.countDocuments({ accountId, ...ACTIVE_WORKSPACE_FILTER });
+}
 
 export async function listWorkspaces(userId: string, accountId: string) {
   const workspaceMemberships = await WorkspaceMembership.find({
@@ -9,10 +51,10 @@ export async function listWorkspaces(userId: string, accountId: string) {
     status: 'verified',
   }).populate({
     path: 'workspaceId',
-    match: { accountId: new Types.ObjectId(accountId) },
+    match: { accountId: new Types.ObjectId(accountId), ...ACTIVE_WORKSPACE_FILTER },
   });
 
-  return workspaceMemberships
+  const items = workspaceMemberships
     .filter((wm) => wm.workspaceId)
     .map((wm) => {
       const ws = wm.workspaceId as unknown as {
@@ -26,8 +68,26 @@ export async function listWorkspaces(userId: string, accountId: string) {
         name: ws.name,
         isDefault: ws.isDefault,
         workspaceRole: wm.workspaceRole,
+        workspaceObjectId: ws._id,
       };
     });
+
+  const workspaceIds = items.map((i) => i.workspaceObjectId);
+  const taskCounts =
+    workspaceIds.length > 0
+      ? await Task.aggregate<{ _id: Types.ObjectId; count: number }>([
+          { $match: { workspaceId: { $in: workspaceIds } } },
+          { $group: { _id: '$workspaceId', count: { $sum: 1 } } },
+        ])
+      : [];
+  const countByWorkspace = new Map(
+    taskCounts.map((row) => [row._id.toString(), row.count])
+  );
+
+  return items.map(({ workspaceObjectId: _oid, ...ws }) => ({
+    ...ws,
+    taskCount: countByWorkspace.get(ws.id) ?? 0,
+  }));
 }
 
 export async function createWorkspace(
@@ -45,14 +105,22 @@ export async function createWorkspace(
     throw new AppError(403, 'Only account admins can create workspaces');
   }
 
-  const existing = await Workspace.findOne({ accountId, name });
+  const existing = await Workspace.findOne({ accountId, name, ...ACTIVE_WORKSPACE_FILTER });
   if (existing) throw new AppError(409, 'Workspace name already exists in this account');
 
-  const workspace = await Workspace.create({
-    accountId,
-    name,
-    isDefault: false,
-  });
+  let workspace;
+  try {
+    workspace = await Workspace.create({
+      accountId,
+      name,
+      isDefault: false,
+    });
+  } catch (err: unknown) {
+    if (isDuplicateKeyError(err)) {
+      throw new AppError(409, 'Workspace name already exists in this account');
+    }
+    throw err;
+  }
 
   await addToWorkspace({
     userId,
@@ -67,12 +135,101 @@ export async function createWorkspace(
     name: workspace.name,
     isDefault: workspace.isDefault,
     workspaceRole: 'admin' as const,
+    taskCount: 0,
+  };
+}
+
+export async function renameWorkspace(
+  workspaceId: string,
+  accountId: string,
+  userId: string,
+  name: string
+) {
+  await assertWorkspaceAdminForTarget(workspaceId, userId);
+  const workspace = await getActiveWorkspace(workspaceId, accountId);
+
+  const duplicate = await Workspace.findOne({
+    accountId,
+    name,
+    ...ACTIVE_WORKSPACE_FILTER,
+    _id: { $ne: workspace._id },
+  });
+  if (duplicate) throw new AppError(409, 'Workspace name already exists in this account');
+
+  workspace.name = name;
+  await workspace.save();
+
+  return {
+    id: workspace._id.toString(),
+    name: workspace.name,
+    isDefault: workspace.isDefault,
+    taskCount: await Task.countDocuments({ workspaceId: workspace._id }),
+  };
+}
+
+export async function deleteWorkspace(
+  workspaceId: string,
+  accountId: string,
+  userId: string
+) {
+  await assertWorkspaceAdminForTarget(workspaceId, userId);
+  const workspace = await getActiveWorkspace(workspaceId, accountId);
+
+  if (workspace.isDefault) {
+    throw new AppError(400, 'Cannot delete the default workspace');
+  }
+
+  const activeCount = await countActiveWorkspacesInAccount(accountId);
+  if (activeCount <= 1) {
+    throw new AppError(400, 'Cannot delete the last workspace in the account');
+  }
+
+  const taskCount = await Task.countDocuments({ workspaceId: workspace._id });
+  if (taskCount > 0) {
+    throw new AppError(400, 'Workspace has tasks. Archive it instead.');
+  }
+
+  await WorkspaceMembership.deleteMany({ workspaceId: workspace._id });
+  await Workspace.deleteOne({ _id: workspace._id });
+
+  return { id: workspaceId, deleted: true };
+}
+
+export async function archiveWorkspace(
+  workspaceId: string,
+  accountId: string,
+  userId: string
+) {
+  await assertWorkspaceAdminForTarget(workspaceId, userId);
+  const workspace = await getActiveWorkspace(workspaceId, accountId);
+
+  if (workspace.isDefault) {
+    throw new AppError(400, 'Cannot archive the default workspace');
+  }
+
+  const activeCount = await countActiveWorkspacesInAccount(accountId);
+  if (activeCount <= 1) {
+    throw new AppError(400, 'Cannot archive the last workspace in the account');
+  }
+
+  const taskCount = await Task.countDocuments({ workspaceId: workspace._id });
+  if (taskCount === 0) {
+    throw new AppError(400, 'Workspace is empty. Delete it instead.');
+  }
+
+  workspace.status = 'archived';
+  workspace.archivedAt = new Date();
+  await workspace.save();
+
+  return {
+    id: workspace._id.toString(),
+    name: workspace.name,
+    archived: true,
   };
 }
 
 export async function listWorkspaceMembers(workspaceId: string, accountId: string) {
-  const workspace = await Workspace.findOne({ _id: workspaceId, accountId });
-  if (!workspace) throw new AppError(404, 'Workspace not found');
+  const workspace = await getActiveWorkspace(workspaceId, accountId);
 
   const memberships = await WorkspaceMembership.find({
     workspaceId,
@@ -97,8 +254,7 @@ export async function addWorkspaceMember(
   requesterAccountRole: string,
   requesterWorkspaceRole: string
 ) {
-  const workspace = await Workspace.findOne({ _id: workspaceId, accountId });
-  if (!workspace) throw new AppError(404, 'Workspace not found');
+  const workspace = await getActiveWorkspace(workspaceId, accountId);
 
   const isAccountAdmin = requesterAccountRole === 'admin';
   const isWorkspaceAdmin = requesterWorkspaceRole === 'admin';
@@ -143,8 +299,7 @@ export async function updateWorkspaceMemberRole(
   requesterAccountRole: string,
   requesterWorkspaceRole: string
 ) {
-  const workspace = await Workspace.findOne({ _id: workspaceId, accountId });
-  if (!workspace) throw new AppError(404, 'Workspace not found');
+  await getActiveWorkspace(workspaceId, accountId);
 
   const membership = await changeWorkspaceMemberRole(
     workspaceId,

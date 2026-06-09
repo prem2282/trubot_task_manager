@@ -102,6 +102,32 @@ Controllers sit between routes and services. They read the HTTP request, call a 
 
 ---
 
+### `renameWorkspace(req, res, next)`
+
+**Route:** `PATCH /api/v1/workspaces/:id`
+
+**Body:** `{ name }`
+
+**What it does:** Renames the workspace. Caller must be workspace admin on `:id`.
+
+---
+
+### `deleteWorkspace(req, res, next)`
+
+**Route:** `DELETE /api/v1/workspaces/:id`
+
+**What it does:** Hard-deletes an empty workspace and its memberships. Not allowed for default, last active, or non-empty workspaces.
+
+---
+
+### `archiveWorkspace(req, res, next)`
+
+**Route:** `POST /api/v1/workspaces/:id/archive`
+
+**What it does:** Marks workspace archived (hidden from lists). Tasks retained. Not allowed for empty, default, or last active workspaces.
+
+---
+
 ### `listMembers(req, res, next)`
 
 **Route:** `GET /api/v1/workspaces/:id/members`

@@ -115,7 +115,7 @@ CLIENT_URL=https://trubotai-taskmanager.netlify.app
 - Forgot password → reset email → new password
 - Login / logout with JWT + refresh token (httpOnly cookie); session survives page reload
 - Multi-account + multi-workspace switchers in nav; restores last active context
-- Create workspaces, manage workspace members, promote/demote workspace roles (last-admin guard)
+- Create workspaces; workspace admins rename, delete (empty), or archive (non-empty); invite and manage members from workspace or Team; promote/demote roles (last-admin guard)
 - Invite users (invite email + copyable link for new users; instant add for verified users); revoke pending invites
 - Task CRUD with filters, pagination, status/due-date chips, comments, assignee permissions
 - Real-time task updates via Socket.io (workspace-scoped rooms)
@@ -130,7 +130,7 @@ CLIENT_URL=https://trubotai-taskmanager.netlify.app
 
 | Layer | What runs | Trigger |
 |-------|-----------|---------|
-| **CI** | Lint + 171 tests (GitHub Actions) | Push or PR to `main` |
+| **CI** | Lint + 185 tests (GitHub Actions) | Push or PR to `main` |
 | **CD (frontend)** | Netlify build + deploy | Push to `main` (repo connected in Netlify) |
 | **CD (backend)** | Render Docker build + deploy | Push to `main` (repo connected in Render) |
 
@@ -168,10 +168,10 @@ Integration tests spin up an in-memory MongoDB replica set (no Docker required).
 
 | Suite | Tests | Location |
 |-------|------:|----------|
-| Client unit | 60 | `client/src/**/__tests__/` |
-| Server unit | 88 | `server/src/**/__tests__/` |
-| Server integration | 23 | `server/src/test/integration/` |
-| **Total** | **171** | |
+| Client unit | 64 | `client/src/**/__tests__/` |
+| Server unit | 94 | `server/src/**/__tests__/` |
+| Server integration | 27 | `server/src/test/integration/` |
+| **Total** | **185** | |
 
 ### Coverage by area
 
@@ -203,7 +203,7 @@ npm run test              # vitest in watch mode (server/client)
 npm run test:integration  # server only — integration suite
 ```
 
-More detail: [TEST_CASES.md](./TEST_CASES.md) (one-line index of all 171 tests) · [server/documentation/README.md](./server/documentation/README.md) (server test file index).
+More detail: [TEST_CASES.md](./TEST_CASES.md) (one-line index of all 185 tests) · [server/documentation/README.md](./server/documentation/README.md) (server test file index).
 
 ## Documentation
 

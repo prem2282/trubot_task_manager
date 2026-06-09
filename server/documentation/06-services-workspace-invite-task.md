@@ -8,7 +8,7 @@
 
 **What it does:** Returns all workspaces in the given account where the user has a verified membership.
 
-**Returns:** Array of `{ id, name, isDefault, workspaceRole }`.
+**Returns:** Array of `{ id, name, isDefault, workspaceRole, taskCount }` for **active** workspaces only (archived excluded).
 
 **When used:** Workspace switcher dropdown and Workspaces page.
 
@@ -29,6 +29,36 @@
 **Returns:** New workspace info with `workspaceRole: 'admin'`.
 
 **Errors:** 403 not admin; 409 duplicate name.
+
+---
+
+### `renameWorkspace(workspaceId, accountId, userId, name)`
+
+**What it does:** Renames an active workspace.
+
+**Authorization:** Caller must be **workspace admin** on the target workspace (membership checked by `workspaceId`, not JWT active workspace).
+
+**Errors:** 403 not workspace admin; 404 not found / archived; 409 duplicate name in account.
+
+---
+
+### `deleteWorkspace(workspaceId, accountId, userId)`
+
+**What it does:** Hard-deletes an **empty** workspace and its workspace memberships.
+
+**Authorization:** Workspace admin on target.
+
+**Rules:** Cannot delete default workspace, last active workspace in account, or workspace with any tasks (use archive instead).
+
+---
+
+### `archiveWorkspace(workspaceId, accountId, userId)`
+
+**What it does:** Sets `status: 'archived'` and `archivedAt`. Workspace disappears from lists, switcher, and context switch; tasks remain in DB.
+
+**Authorization:** Workspace admin on target.
+
+**Rules:** Cannot archive empty workspace (delete instead), default workspace, or last active workspace.
 
 ---
 
@@ -101,15 +131,21 @@ If the email fails to send, the invite is still created and `emailSent` is `fals
 
 ---
 
-### `listInvites(accountId)`
+### `assertCanInviteToWorkspace(userId, accountId, workspaceId)`
 
-**What it does:** Returns all pending invitations for the account (without exposing token hashes).
+**What it does:** Permits account admins or workspace admins on the target workspace to create, list, or revoke invites for that workspace.
 
 ---
 
-### `revokeInvite(inviteId, accountId)`
+### `listInvites(accountId, requesterUserId, workspaceId?)`
 
-**What it does:** Marks a pending invitation as `revoked` so the link no longer works.
+**What it does:** Returns pending invitations (without token hashes). Account admins may list all; workspace admins must pass `workspaceId` for a workspace they admin.
+
+---
+
+### `revokeInvite(inviteId, accountId, requesterUserId)`
+
+**What it does:** Marks a pending invitation as `revoked` after verifying the requester can manage invites for that invite's workspace.
 
 ---
 

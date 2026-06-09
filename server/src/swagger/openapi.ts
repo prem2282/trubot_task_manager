@@ -570,6 +570,65 @@ export const swaggerSpec = {
       },
     },
 
+    '/workspaces/{id}': {
+      patch: {
+        tags: ['Workspaces'],
+        summary: 'Rename workspace',
+        description: 'Workspace admin on this workspace only.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: objectId }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['name'],
+                properties: { name: { type: 'string', minLength: 2, maxLength: 200 } },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Workspace renamed' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+          '409': { description: 'Duplicate workspace name' },
+        },
+      },
+      delete: {
+        tags: ['Workspaces'],
+        summary: 'Delete empty workspace',
+        description:
+          'Workspace admin only. Allowed when the workspace has no tasks, is not the default, and is not the last active workspace.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: objectId }],
+        responses: {
+          '200': { description: 'Workspace deleted' },
+          '400': { description: 'Not empty, default, or last workspace' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+
+    '/workspaces/{id}/archive': {
+      post: {
+        tags: ['Workspaces'],
+        summary: 'Archive workspace',
+        description:
+          'Workspace admin only. Hides a non-empty workspace from all users. Tasks are retained.',
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: 'id', in: 'path', required: true, schema: objectId }],
+        responses: {
+          '200': { description: 'Workspace archived' },
+          '400': { description: 'Empty, default, or last workspace' },
+          '403': { $ref: '#/components/responses/Forbidden' },
+          '404': { $ref: '#/components/responses/NotFound' },
+        },
+      },
+    },
+
     '/workspaces/{id}/members': {
       get: {
         tags: ['Workspaces'],

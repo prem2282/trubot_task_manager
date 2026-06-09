@@ -12,6 +12,46 @@ export async function listWorkspaces(req: Request, res: Response, next: NextFunc
   }
 }
 
+export async function renameWorkspace(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await workspaceService.renameWorkspace(
+      param(req.params.id, 'id'),
+      req.user!.accountId,
+      req.user!.userId,
+      req.body.name
+    );
+    res.json({ success: true, data });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function deleteWorkspace(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await workspaceService.deleteWorkspace(
+      param(req.params.id, 'id'),
+      req.user!.accountId,
+      req.user!.userId
+    );
+    res.json({ success: true, data });
+  } catch (e) {
+    next(e);
+  }
+}
+
+export async function archiveWorkspace(req: Request, res: Response, next: NextFunction) {
+  try {
+    const data = await workspaceService.archiveWorkspace(
+      param(req.params.id, 'id'),
+      req.user!.accountId,
+      req.user!.userId
+    );
+    res.json({ success: true, data });
+  } catch (e) {
+    next(e);
+  }
+}
+
 export async function createWorkspace(req: Request, res: Response, next: NextFunction) {
   try {
     const data = await workspaceService.createWorkspace(
