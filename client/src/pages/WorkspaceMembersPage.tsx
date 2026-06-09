@@ -56,7 +56,7 @@ export default function WorkspaceMembersPage() {
   );
   const workspaceName =
     targetWorkspace?.name ??
-    (workspace?.id === id ? workspace.name : undefined) ??
+    (workspace && workspace.id === id ? workspace.name : undefined) ??
     'Workspace';
   const canManage =
     targetWorkspace?.workspaceRole === 'admin' || isAccountAdmin;
