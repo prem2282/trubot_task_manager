@@ -2,6 +2,7 @@ import { FormEvent, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { api } from '../services/api';
 import { formatApiError, parseApiError } from '../utils/apiErrors';
+import { isLocalDev, MAILPIT_URL } from '../utils/isLocalDev';
 
 export default function ForgotPasswordPage() {
   const location = useLocation();
@@ -21,10 +22,10 @@ export default function ForgotPasswordPage() {
     try {
       const { data } = await api.post('/auth/forgot-password', { email: email.trim() });
       setMessage(data.message);
-      if (data.devInboxUrl) {
+      if (isLocalDev() && data.devInboxUrl) {
         setDevInboxUrl(data.devInboxUrl);
-      } else if (import.meta.env.DEV) {
-        setDevInboxUrl('http://localhost:8025');
+      } else if (isLocalDev()) {
+        setDevInboxUrl(MAILPIT_URL);
       }
     } catch (err: unknown) {
       setError(formatApiError(parseApiError(err, 'Request failed')));
@@ -40,10 +41,10 @@ export default function ForgotPasswordPage() {
         <p className="mb-6 text-sm text-slate-600">
           Enter your email and we&apos;ll send a reset link if an account exists.
         </p>
-        {import.meta.env.DEV && !message && (
+        {isLocalDev() && !message && (
           <p className="mb-4 rounded border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
             Local dev: emails are captured by{' '}
-            <a href="http://localhost:8025" className="text-indigo-600">
+            <a href={MAILPIT_URL} className="text-indigo-600">
               Mailpit
             </a>
             , not sent to Gmail/Outlook.
@@ -54,7 +55,7 @@ export default function ForgotPasswordPage() {
             {message}
           </div>
         )}
-        {devInboxUrl && (
+        {isLocalDev() && devInboxUrl && (
           <p className="mb-4 rounded border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900">
             Open{' '}
             <a href={devInboxUrl} className="font-medium underline">

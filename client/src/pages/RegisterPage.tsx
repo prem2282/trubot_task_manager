@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
 import { fieldLabel, formatApiError, parseApiError, type FieldErrors } from '../utils/apiErrors';
 import { confirmPasswordError } from '../utils/password';
+import { isLocalDev, MAILPIT_URL } from '../utils/isLocalDev';
 import { FieldLabel } from '../components/InfoTip';
 
 type RegisterField = 'name' | 'email' | 'password' | 'confirmPassword' | 'accountName';
@@ -131,10 +132,15 @@ export default function RegisterPage() {
           <p className="mb-6 text-sm text-slate-600">
             We sent a verification link to <strong>{registeredEmail}</strong>.
           </p>
-          <p className="mb-6 rounded border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-            Local dev: open <a href="http://localhost:8025" className="text-indigo-600">Mailpit</a>{' '}
-            to view the email and click the verification link.
-          </p>
+          {isLocalDev() && (
+            <p className="mb-6 rounded border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
+              Local dev: open{' '}
+              <a href={MAILPIT_URL} className="text-indigo-600">
+                Mailpit
+              </a>{' '}
+              to view the email and click the verification link.
+            </p>
+          )}
           {resendMessage && (
             <div className="mb-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">
               {resendMessage}
