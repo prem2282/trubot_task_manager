@@ -42,7 +42,11 @@ export default function VerifyEmailPage() {
   };
 
   if (!meta && !error) {
-    return <div className="flex min-h-screen items-center justify-center">Loading verification...</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <p className="text-center text-slate-600">Checking your verification link...</p>
+      </div>
+    );
   }
 
   return (

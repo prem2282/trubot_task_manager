@@ -93,12 +93,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         workspace: data.data.workspace,
         isAuthenticated: true,
       });
-      try {
-        await get().fetchMemberships();
-        await get().restoreLastContext();
-      } catch {
-        // Memberships are non-blocking for initial app load.
-      }
+      void get()
+        .fetchMemberships()
+        .then(() => get().restoreLastContext())
+        .catch(() => {
+          // Memberships are non-blocking for initial app load.
+        });
     } catch (error: unknown) {
       const status = (error as { response?: { status?: number } })?.response?.status;
       if (status === 401 || status === 403) {

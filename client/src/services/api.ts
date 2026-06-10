@@ -6,6 +6,7 @@ const ACCESS_TOKEN_KEY = 'taskManager.accessToken';
 export const api = axios.create({
   baseURL: API_URL,
   withCredentials: true,
+  timeout: 20000,
 });
 
 let accessToken: string | null = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -74,7 +75,12 @@ api.interceptors.response.use(
     const skipRefresh =
       url.includes('/auth/refresh') ||
       url.includes('/auth/login') ||
-      url.includes('/auth/register');
+      url.includes('/auth/register') ||
+      url.includes('/auth/verify-email') ||
+      url.includes('/auth/resend-verification') ||
+      url.includes('/auth/forgot-password') ||
+      url.includes('/auth/reset-password') ||
+      url.includes('/invites/');
 
     if (error.response?.status === 401 && original && !original._retry && !skipRefresh) {
       original._retry = true;

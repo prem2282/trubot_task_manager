@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { matchPath, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuthStore } from './store/authStore';
 import { setOnTokenRefreshed } from './services/api';
@@ -17,8 +17,23 @@ import WorkspacesPage from './pages/WorkspacesPage';
 import WorkspaceMembersPage from './pages/WorkspaceMembersPage';
 import TeamPage from './pages/TeamPage';
 
+const PUBLIC_ROUTES = [
+  '/login',
+  '/register',
+  '/verify-email/:token',
+  '/forgot-password',
+  '/reset-password/:token',
+  '/accept-invite/:token',
+] as const;
+
+function isPublicRoute(pathname: string) {
+  return PUBLIC_ROUTES.some((pattern) => matchPath(pattern, pathname));
+}
+
 export default function App() {
+  const location = useLocation();
   const authReady = useAuthStore((s) => s.authReady);
+  const publicRoute = isPublicRoute(location.pathname);
 
   useEffect(() => {
     void useAuthStore.getState().fetchMe();
@@ -32,7 +47,7 @@ export default function App() {
     return () => setOnTokenRefreshed(null);
   }, []);
 
-  if (!authReady) {
+  if (!authReady && !publicRoute) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-slate-600">Loading...</p>
