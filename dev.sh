@@ -84,6 +84,13 @@ start_docker_runtime() {
   fi
 
   if ! docker info >/dev/null 2>&1; then
+    if command -v colima >/dev/null 2>&1 && colima status >/dev/null 2>&1; then
+      log "Colima is running but Docker is not responding — restarting Colima..."
+      colima restart
+    fi
+  fi
+
+  if ! docker info >/dev/null 2>&1; then
     log "Error: Docker is not available."
     log "Start Docker Desktop or run: colima start"
     exit 1
@@ -93,6 +100,12 @@ start_docker_runtime() {
 start_docker_stack() {
   log "Starting Docker stack (MongoDB, Mailpit, API)..."
   cd "$ROOT_DIR"
+  if docker compose ps -q 2>/dev/null | grep -q .; then
+    log "Stopping existing Docker stack..."
+    docker compose down
+  fi
+  # Free port only if a non-Docker process is still bound (e.g. stale node server).
+  ensure_api_port_free
   docker compose up -d --build
 
   log "Waiting for MongoDB replica set (~20s)..."
@@ -236,7 +249,6 @@ cmd_start() {
   ensure_node_version
   start_docker_runtime
   ensure_env_files
-  ensure_api_port_free
   start_docker_stack
   ensure_dependencies
   start_client
